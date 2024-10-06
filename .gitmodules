@@ -1,0 +1,9 @@
+[submodule "qgiflib"]
+	path = qgiflib
+	url = git@github.com:Wing-summer/qgiflib.git
+[submodule "giflib"]
+	path = 3rdparty/giflib
+	url = git@github.com:TheAssemblyArmada/giflib.git
+[submodule "3rdparty/qwindowkit"]
+	path = 3rdparty/qwindowkit
+	url = git@github.com:Wing-summer/qwindowkit.git
