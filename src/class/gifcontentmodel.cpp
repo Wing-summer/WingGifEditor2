@@ -147,8 +147,13 @@ int GifContentModel::delayLimitMax() { return 65530; }
 void GifContentModel::removeFrames(int index, qsizetype count) {
     if (count < 0) {
         beginRemoveRows(QModelIndex(), index, this->frameCount() - 1);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         _data.erase(_data.cbegin() + index, _data.cend());
         _delays.erase(_delays.cbegin() + index, _delays.cend());
+#else
+        _data.erase(_data.begin() + index, _data.end());
+        _delays.erase(_delays.begin() + index, _delays.end());
+#endif
     } else {
         beginRemoveRows(QModelIndex(), index, index + count - 1);
         _data.remove(index, count);
@@ -217,15 +222,21 @@ void GifContentModel::setFrameDelay(qsizetype index, int delay,
                                     qsizetype count) {
     Q_ASSERT(count != 0);
     if (count < 0) {
+
+#pragma omp parallel for
         for (qsizetype i = index; i < _delays.size(); ++i) {
             _delays.replace(i, delay);
         }
+
         emit dataChanged(this->index(index), this->index(_delays.size() - 1));
     } else {
-        auto total = qMin(index + count, _delays.size());
+        auto total = qMin(index + count, qsizetype(_delays.size()));
+
+#pragma omp parallel for
         for (qsizetype i = index; i < total; ++i) {
             _delays.replace(i, delay);
         }
+
         emit dataChanged(this->index(index), this->index(total - 1));
     }
 }
@@ -264,12 +275,14 @@ void GifContentModel::flipFrames(Qt::Orientation dir, int index,
                                  qsizetype count) {
     switch (dir) {
     case Qt::Horizontal: {
+#pragma omp parallel for
         for (auto &img : _data) {
             img = img.mirrored(true, false);
         }
         break;
     }
     case Qt::Vertical: {
+#pragma omp parallel for
         for (auto &img : _data) {
             img = img.mirrored();
         }
@@ -300,6 +313,7 @@ void GifContentModel::reverseFrames(qsizetype begin, qsizetype end) {
 void GifContentModel::rotateFrames(bool clockwise) {
     QTransform trans;
     trans.rotate(clockwise ? -90 : 90);
+#pragma omp parallel for
     for (auto &img : _data) {
         img = img.transformed(trans, Qt::SmoothTransformation);
     }

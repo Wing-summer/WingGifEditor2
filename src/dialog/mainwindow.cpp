@@ -9,6 +9,7 @@
 #include "class/gifcontentmodel.h"
 #include "class/gifreader.h"
 #include "class/gifwriter.h"
+#include "class/logger.h"
 #include "class/qkeysequences.h"
 #include "class/settingmanager.h"
 #include "class/waitingloop.h"
@@ -31,6 +32,8 @@
 #include "dialog/aboutsoftwaredialog.h"
 #include "dialog/createreversedialog.h"
 #include "dialog/exportdialog.h"
+#include "dialog/fileinfodialog.h"
+#include "dialog/gifsavedialog.h"
 #include "dialog/newdialog.h"
 #include "dialog/reduceframedialog.h"
 #include "dialog/scalegifdialog.h"
@@ -144,6 +147,15 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     });
     connect(_editor, &GifEditor::selRectChanged, _cuttingdlg,
             &CropGifDialog::setSelRect);
+
+    _logdialog = new LogDialog(this);
+    auto log = Logger::instance();
+    log->setLogLevel(Logger::Level::q5TRACE);
+    connect(log, &Logger::log, _logdialog, &LogDialog::log);
+
+    auto &plg = PluginSystem::instance();
+    plg.setMainWindow(this);
+    plg.LoadPlugin();
 
     setEditModeEnabled(false);
 
@@ -266,36 +278,55 @@ void MainWindow::on_save() {
         return;
     }
 
+    GifSaveDialog d;
+    GifSaveResult r;
+    if (d.exec()) {
+        r = d.getResult();
+    } else {
+        Toast::toast(this, NAMEICONRES("save"), tr("CaneledByUser"));
+        return;
+    }
+
     WingProgressDialog dw;
     dw.dialog()->setCancelButton(nullptr);
     dw.dialog()->setLabelText(tr("SaveGif"));
     dw.dialog()->setRange(0, 0);
 
-    if (writeGif(_curfilename)) {
+    if (writeGif(_curfilename, r.loop, r.comment)) {
         undo.setClean();
         Toast::toast(this, NAMEICONRES("save"), tr("SaveSuccess"));
     } else {
-        Toast::toast(this, NAMEICONRES("save"), "SaveFail");
+        Toast::toast(this, NAMEICONRES("save"), tr("SaveFail"));
     }
 }
 
 void MainWindow::on_saveas() {
     _player->stop();
 
-    auto filename = QFileDialog::getSaveFileName(this, tr("ChooseSaveFile"),
-                                                 _lastusedpath, "gif (*.gif)");
+    GifSaveDialog d;
+    GifSaveResult r;
+    if (d.exec()) {
+        r = d.getResult();
+    } else {
+        Toast::toast(this, NAMEICONRES("saveas"), tr("CaneledByUser"));
+        return;
+    }
+
+    auto filename =
+        QFileDialog::getSaveFileName(this, tr("ChooseSaveFile"), _lastusedpath,
+                                     QStringLiteral("gif (*.gif)"));
     if (filename.isEmpty())
         return;
     _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
 
     WaitingLoop wl(tr("SaveAsGif"));
 
-    if (writeGif(filename)) {
+    if (writeGif(filename, r.loop, r.comment)) {
         Toast::toast(this, NAMEICONRES("saveas"), tr("SaveAsSuccess"));
         _curfilename = filename;
         m_recentmanager->addRecentFile(filename);
     } else {
-        Toast::toast(this, NAMEICONRES("saveas"), "SaveAsFail");
+        Toast::toast(this, NAMEICONRES("saveas"), tr("SaveAsFail"));
     }
 }
 
@@ -369,7 +400,7 @@ void MainWindow::on_redo() {
 void MainWindow::on_copy() {
     _player->stop();
     auto sels = _gallery->selectionModel()->selectedRows();
-    QList<GifData> sel;
+    QVector<GifData> sel;
     for (auto &i : sels) {
         auto index = i.row();
         GifData d;
@@ -383,7 +414,7 @@ void MainWindow::on_copy() {
 void MainWindow::on_cut() {
     _player->stop();
     auto sels = _gallery->selectionModel()->selectedRows();
-    QList<GifData> sel;
+    QVector<GifData> sel;
     QVector<int> indices;
     for (auto &i : sels) {
         GifData d;
@@ -402,7 +433,7 @@ void MainWindow::on_cut() {
 void MainWindow::on_paste() {
     _player->stop();
     auto pos = _gallery->currentIndex().row() + 1;
-    QList<GifData> imgs;
+    QVector<GifData> imgs;
     ClipBoardHelper::getImageFrames(imgs);
     if (imgs.count()) {
         undo.push(new InsertFrameCommand(_model, pos, imgs));
@@ -837,6 +868,12 @@ RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
                             &MainWindow::on_export,
                             shortcuts.keySequence(QKeySequences::Key::EXPORT));
         m_editStateWidgets << a;
+        a = addPannelAction(
+            pannel, QStringLiteral("info"), tr("FileInfo"), [=] {
+                FileInfoDialog(_curfilename, _model->frameSize(), _comment)
+                    .exec();
+            });
+        m_editStateWidgets << a;
     }
 
     return tab;
@@ -963,6 +1000,28 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
 
     {
         auto pannel = tab->addGroup(tr("LoopUp"));
+
+        auto menu = new QMenu(this);
+        menu->addAction(
+            newAction(QStringLiteral("80%"), [this] { _editor->setZoom(80); }));
+        menu->addAction(
+            newAction(QStringLiteral("90%"), [this] { _editor->setZoom(90); }));
+        menu->addAction(newAction(QStringLiteral("100%"),
+                                  [this] { _editor->setZoom(100); }));
+        menu->addSeparator();
+        menu->addAction(newAction(QStringLiteral("120%"),
+                                  [this] { _editor->setZoom(120); }));
+        menu->addAction(newAction(QStringLiteral("150%"),
+                                  [this] { _editor->setZoom(150); }));
+        menu->addAction(newAction(QStringLiteral("200%"),
+                                  [this] { _editor->setZoom(200); }));
+        menu->addAction(newAction(QStringLiteral("250%"),
+                                  [this] { _editor->setZoom(250); }));
+        menu->addAction(newAction(QStringLiteral("300%"),
+                                  [this] { _editor->setZoom(300); }));
+        addPannelAction(pannel, QStringLiteral("scaleview"), tr("Scale"),
+                        EMPTY_FUNC, {}, menu);
+
         addPannelAction(pannel, QStringLiteral("selall"), tr("SelectAll"),
                         &MainWindow::on_selall, QKeySequence::SelectAll);
         addPannelAction(pannel, QStringLiteral("desel"), tr("Deselect"),
@@ -975,6 +1034,7 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
                         shortcuts.keySequence(QKeySequences::Key::SEL_REV));
         _playDisWidgets << pannel;
     }
+
     return tab;
 }
 
@@ -1007,6 +1067,9 @@ RibbonTabContent *MainWindow::buildAboutPage(RibbonTabContent *tab) {
     addPannelAction(pannel, QStringLiteral("qt"), tr("AboutQT"),
                     [this] { WingMessageBox::aboutQt(this); });
 
+    addPannelAction(pannel, QStringLiteral("log"), tr("Log"),
+                    [=] { _logdialog->show(); });
+
     return tab;
 }
 
@@ -1033,17 +1096,23 @@ bool MainWindow::readGif(const QString &gif) {
     if (!reader.load(gif)) {
         return false;
     }
+    _comment = reader.comment();
     _model->readGifReader(&reader);
     _gallery->setCurrentIndex(_model->index(0));
     return true;
 }
 
-bool MainWindow::writeGif(const QString &gif, const QString &comment) {
+bool MainWindow::writeGif(const QString &gif, unsigned int loopCount,
+                          const QString &comment) {
     GifWriter writer(_model->width(), _model->height());
-    writer.setExtString(
-        comment.isEmpty() ? QStringLiteral("Made by WingGifEditor2") : comment);
+
+    writer.setExtString(comment);
     writer.pushRange(_model->images(), _model->delays());
-    return writer.save(gif);
+    auto ret = writer.save(gif, loopCount);
+    if (ret) {
+        _comment = comment;
+    }
+    return ret;
 }
 
 bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
@@ -1066,7 +1135,7 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
 bool MainWindow::loadfromImages(const QStringList &filenames, int newInterval,
                                 qsizetype index, QSize size) {
     if (index < 0) {
-        index = qMax(_model->frameCount() - 1, 0);
+        index = qMax(_model->frameCount() - 1, qsizetype(0));
     }
     Q_ASSERT(index < _model->frameCount());
 
@@ -1207,8 +1276,6 @@ int MainWindow::getNewFrameInterval() {
 void MainWindow::closeEvent(QCloseEvent *event) {
     _player->stop();
     if (ensureSafeClose()) {
-        // m_settings->saveWindowStatus(this);
-
         auto &set = SettingManager::instance();
         set.setRecentFiles(m_recentmanager->saveRecent());
         set.save();

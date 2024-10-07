@@ -56,7 +56,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     sbwidth->setValue(_oldwidth);
     sbwidth->setSuffix(" px");
 
-    connect(sbwidth, &QSpinBox::valueChanged, this, [=] {
+    connect(sbwidth, QOverload<int>::of(&QSpinBox::valueChanged), this, [=] {
         if (_lockscale)
             sbheight->setValue(sbwidth->value() * _oldheight / _oldwidth);
     });
@@ -74,7 +74,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     sbheight->setValue(_oldheight);
     sbheight->setSuffix(" px");
 
-    connect(sbheight, &QSpinBox::valueChanged, this, [=] {
+    connect(sbheight, QOverload<int>::of(&QSpinBox::valueChanged), this, [=] {
         if (_lockscale)
             sbwidth->setValue(sbheight->value() * _oldwidth / _oldheight);
     });

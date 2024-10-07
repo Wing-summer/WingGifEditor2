@@ -1,4 +1,4 @@
-<h1 align="center"> WingSummer.WingGifEditor</h1>
+<h1 align="center"> WingSummer.WingGifEditor2</h1>
 
 <p align="center">
 <img alt="WingGifEditor2" src="images/icon.png">
@@ -12,16 +12,17 @@
 
 - 开源不易，给个 Star 或者 [捐助](#捐助) 吧
 
-
 ## WingGifEditor2
 
 &emsp;&emsp;本软件是基于 QT C++ 编写的 GIF 编辑器，采用 C++ 进行开发。`Windows`上有一个十分强大都既是 GIF 录屏工具又是强大 GIF 编辑器`ScreenToGif`。但 Linux 上只有强大的 GIF 录屏工具，但没有简单好用满足基本编辑需求带有图形界面的 GIF 编辑器。于是乎，我给开发了一个简易的 GIF 编辑器，它具有基本的编辑功能，简单方便。
+
+&emsp;&emsp;相对于老版本的`WingGifEditor`，它修复了一些 Bug，并且具有了小小的插件系统，用于实现扩展图像编辑。并且具有更现代的用户界面，更快的 Gif 图像加载速度和保存速度以及相对较低的内存占用，更好的图像编辑体验。
 
 &emsp;&emsp;有关本软件提建议的时候不要天马行空，本软件的定位是提供简单易用满足基本需求的 GIF 编辑器，并不是像`ScreenToGif`，一是没有相关基础知识，自己一个人搞不动；二是没必要，我不想把这个软件搞个大而全，配合`Gimp`等优秀的图像编辑器作为辅助，来编辑 GIF 图像绰绰有余了。
 
 ### GIF 库
 
-&emsp;&emsp;本软件基于
+&emsp;&emsp;基于 [qgiflib](https://github.com/igormironchik/qgiflib) 修改得到，感谢里面提供了大量的保存 GIF 代码可供参考，保证了保存图像的质量。
 
 ### 参与贡献
 
@@ -68,8 +69,9 @@
 
 ## 有关仓库
 
-- Github : https://github.com/Wing-summer/WingGifEditor2
+- Github : <https://github.com/Wing-summer/WingGifEditor2>
+- Gitee : <https://gitee.com/wing-cloud/WingGifEditor2>
 
 ## WIKI
 
-&emsp;&emsp;点击 [此链接]() 来进行学习使用，可视化的编辑 GIF 。
+&emsp;&emsp;点击 [此链接](https://github.com/Wing-summer/WingGifEditor2/wiki) 来进行学习使用，可视化的编辑 GIF 。

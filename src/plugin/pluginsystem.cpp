@@ -31,6 +31,33 @@ const IWingPlugin *PluginSystem::plugin(qsizetype index) const {
     return loadedplgs.at(index);
 }
 
+void PluginSystem::LoadPlugin() {
+    Q_ASSERT(_win);
+
+#ifdef QT_DEBUG
+    QDir plugindir(QCoreApplication::applicationDirPath() +
+                   QStringLiteral("/plugin"));
+    // 这是我的插件调试目录，如果调试插件，请更换路径
+#ifdef Q_OS_WIN
+    plugindir.setNameFilters({"*.dll", "*.wingplg"});
+#else
+    plugindir.setNameFilters({"*.so", "*.wingplg"});
+#endif
+#else
+    QDir plugindir(QCoreApplication::applicationDirPath() +
+                   QStringLiteral("/plugin"));
+    plugindir.setNameFilters({"*.wingplg"});
+#endif
+    auto plgs = plugindir.entryInfoList();
+    Logger::info(tr("FoundPluginCount") + QString::number(plgs.count()));
+
+    for (auto &item : plgs) {
+        loadPlugin(item);
+    }
+
+    Logger::info(tr("PluginLoadingFinished"));
+}
+
 bool PluginSystem::checkThreadAff() {
     if (QThread::currentThread() != qApp->thread()) {
         Logger::warning(
@@ -164,6 +191,24 @@ void PluginSystem::connectUIInterface(IWingPlugin *plg) {
                 }
                 return qQNaN();
             });
+}
+
+void PluginSystem::loadPlugin(const QFileInfo &fileinfo) {
+    Q_ASSERT(_win);
+
+    if (fileinfo.exists()) {
+        QPluginLoader loader(fileinfo.absoluteFilePath(), this);
+        Logger::info(tr("LoadingPlugin") + fileinfo.fileName());
+        auto p = qobject_cast<IWingPlugin *>(loader.instance());
+        if (Q_UNLIKELY(p == nullptr)) {
+            Logger::critical(loader.errorString());
+        } else {
+            if (!loadPlugin(p)) {
+                loader.unload();
+            }
+        }
+        Logger::_log("");
+    }
 }
 
 bool PluginSystem::loadPlugin(IWingPlugin *p) {
@@ -300,6 +345,12 @@ void PluginSystem::connectBaseInterface(IWingPlugin *plg) {
                 auto d = new FramelessDialogBase;
                 d->buildUpContent(content);
                 return d;
+            });
+    connect(plg, &IWingPlugin::isEditing, this,
+            [=]() -> bool { return !_win->_curfilename.isEmpty(); });
+    connect(plg, &IWingPlugin::scaleGif, this,
+            [=](int width, int height) -> void {
+                _win->_model->scaleFrames(width, height);
             });
 }
 

@@ -14,7 +14,7 @@ public:
 
 private:
     GifContentModel *gif;
-    QList<QImage> buffer;
+    QVector<QImage> buffer;
     int _w, _h;
 };
 

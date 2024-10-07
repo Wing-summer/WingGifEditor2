@@ -5,7 +5,7 @@
 #include <QMimeData>
 #include <QPainter>
 
-void ClipBoardHelper::setImageFrames(const QList<GifData> &frames) {
+void ClipBoardHelper::setImageFrames(const QVector<GifData> &frames) {
     auto clipboard = qApp->clipboard();
     QByteArray buffer;
     auto len = frames.count();
@@ -29,7 +29,7 @@ void ClipBoardHelper::setImageFrames(const QList<GifData> &frames) {
     clipboard->setMimeData(mimeData);
 }
 
-void ClipBoardHelper::getImageFrames(QList<GifData> &frames) {
+void ClipBoardHelper::getImageFrames(QVector<GifData> &frames) {
     frames.clear();
     auto clipboard = qApp->clipboard();
     auto buffer = clipboard->mimeData()->data("application/octet-stream");

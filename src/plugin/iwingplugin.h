@@ -150,6 +150,7 @@ signals:
     void info(const QString &message);
 
     // basic
+    bool isEditing();
     bool addFrame(qsizetype index, const QImage &frame, int delay);
     void removeFrame(qsizetype index, qsizetype count = 1);
     void clearFrame();
@@ -158,6 +159,7 @@ signals:
     bool replaceFrame(qsizetype index, const QImage &image);
     bool replaceFrameDelay(qsizetype index, int delay);
     qsizetype frameCount();
+    void scaleGif(int width, int height);
 
     // if you want to support undo/redo,
     // here is the stack, just push it

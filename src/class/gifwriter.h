@@ -7,6 +7,8 @@
 #include <QMap>
 #include <QString>
 
+#include <memory>
+
 class GifWriter {
 private:
     struct Color {
@@ -206,7 +208,12 @@ private:
             n /= 2;
         }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QList<QRgb> newColors;
+#else
+
+        QVector<QRgb> newColors;
+#endif
 
         for (const auto &s : std::as_const(indexed))
             newColors.push_back(colorForSet(s));

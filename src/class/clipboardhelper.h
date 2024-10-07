@@ -9,8 +9,8 @@
 class ClipBoardHelper : public QObject {
     Q_OBJECT
 public:
-    static void setImageFrames(const QList<GifData> &frames);
-    static void getImageFrames(QList<GifData> &frames);
+    static void setImageFrames(const QVector<GifData> &frames);
+    static void getImageFrames(QVector<GifData> &frames);
 };
 
 #endif // CLIPBOARDHELPER_H

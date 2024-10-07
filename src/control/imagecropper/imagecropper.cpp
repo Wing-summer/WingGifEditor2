@@ -1,5 +1,6 @@
 #include "imagecropper.h"
 
+#include <QApplication>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>

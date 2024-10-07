@@ -26,7 +26,7 @@ void GifEditor::zoomOut() { scale(0.9, 0.9); }
 
 void GifEditor::setZoom(int value) {
     resetTransform();
-    qreal v = value / 100;
+    qreal v = value / 100.0;
     scale(v, v);
 }
 
@@ -63,13 +63,13 @@ void GifEditor::wheelEvent(QWheelEvent *event) {
     QPoint numDegrees = event->angleDelta();
 
     if (!numPixels.isNull()) {
-        if (numPixels.y() > 0) {
+        if (numPixels.y() < 0) {
             zoomOut();
         } else {
             zoomIn();
         }
     } else if (!numDegrees.isNull()) {
-        if (numDegrees.y() > 0) {
+        if (numDegrees.y() < 0) {
             zoomOut();
         } else {
             zoomIn();

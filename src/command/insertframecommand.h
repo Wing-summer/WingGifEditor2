@@ -9,7 +9,8 @@
 class InsertFrameCommand : public QUndoCommand {
 public:
     InsertFrameCommand(GifContentModel *model, int index,
-                       QList<GifData> &images, QUndoCommand *parent = nullptr);
+                       const QVector<GifData> &images,
+                       QUndoCommand *parent = nullptr);
 
     void undo() override;
     void redo() override;
@@ -17,7 +18,7 @@ public:
 protected:
     GifContentModel *gif;
     int oldindex;
-    QList<GifData> oldimgs;
+    QVector<GifData> oldimgs;
 };
 
 #endif // INSERTFRAMECOMMAND_H

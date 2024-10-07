@@ -31,6 +31,8 @@ public:
 
     qsizetype imageCount() const;
 
+    QString comment() const;
+
 private:
     bool closeHandleWithError(GifFileType *handle);
 
@@ -44,6 +46,7 @@ private:
     qsizetype m_framesCount = -1;
     QVector<int> m_delays;
     QVector<QImage> m_data;
+    QString m_comment;
 };
 
 #endif // GIFREADER_H

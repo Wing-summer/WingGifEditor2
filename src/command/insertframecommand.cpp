@@ -1,7 +1,7 @@
 #include "insertframecommand.h"
 
 InsertFrameCommand::InsertFrameCommand(GifContentModel *model, int index,
-                                       QList<GifData> &images,
+                                       const QVector<GifData> &images,
                                        QUndoCommand *parent)
     : QUndoCommand(parent), gif(model), oldindex(index), oldimgs(images) {}
 

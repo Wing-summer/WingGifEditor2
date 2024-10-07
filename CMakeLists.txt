@@ -87,6 +87,12 @@ set(PROJECT_SOURCES
     src/dialog/aboutsoftwaredialog.cpp
     src/dialog/aboutsoftwaredialog.h
     src/dialog/aboutsoftwaredialog.ui
+    src/dialog/fileinfodialog.cpp
+    src/dialog/fileinfodialog.h
+    src/dialog/gifsavedialog.h
+    src/dialog/gifsavedialog.cpp
+    src/dialog/logdialog.h
+    src/dialog/logdialog.cpp
     src/class/appmanager.cpp
     src/class/appmanager.h
     src/class/clipboardhelper.cpp

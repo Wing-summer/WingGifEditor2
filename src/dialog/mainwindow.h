@@ -10,6 +10,7 @@
 #include "control/gifeditor.h"
 #include "dialog/cropgifdialog.h"
 #include "dialog/framelessmainwindow.h"
+#include "dialog/logdialog.h"
 #include "plugin/pluginsystem.h"
 #include "utilities.h"
 
@@ -97,6 +98,17 @@ private:
         return a;
     }
 
+    template <typename Func>
+    inline QAction *newAction(const QString &title, Func &&slot,
+                              const QKeySequence &shortcut = QKeySequence()) {
+        auto a = new QAction;
+        a->setText(title);
+        a->setShortcutVisibleInContextMenu(true);
+        a->setShortcut(shortcut);
+        connect(a, &QAction::triggered, this, slot);
+        return a;
+    }
+
 private:
     void buildUpRibbonBar();
 
@@ -163,7 +175,8 @@ private:
     RibbonTabContent *buildAboutPage(RibbonTabContent *tab);
 
     bool readGif(const QString &gif);
-    bool writeGif(const QString &gif, const QString &comment = QString());
+    bool writeGif(const QString &gif, unsigned int loopCount = 0,
+                  const QString &comment = QString());
     bool exportGifFrames(const QString &dirPath, const char *ext);
     bool loadfromImages(const QStringList &filenames, int newInterval,
                         qsizetype index = 0, QSize size = QSize());
@@ -198,11 +211,13 @@ private:
     GifContentGallery *_gallery = nullptr;
     QString _curfilename;
     QString _lastusedpath;
+    QString _comment;
 
     QMenu *m_recentMenu = nullptr;
     RecentFileManager *m_recentmanager = nullptr;
 
     CropGifDialog *_cuttingdlg;
+    LogDialog *_logdialog;
 
     RibbonTabContent *ribbonPlg = nullptr;
     RibbonTabContent *ribbonSetting = nullptr;

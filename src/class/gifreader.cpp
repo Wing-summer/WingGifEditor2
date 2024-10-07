@@ -140,7 +140,12 @@ bool GifReader::load(const QString &filename) {
                         disposalMode = b.DisposalMode;
                         transparentIndex = b.TransparentColor;
                     } break;
-
+                    case COMMENT_EXT_FUNC_CODE: {
+                        auto len = extData[0];
+                        auto rawString = QByteArray(
+                            reinterpret_cast<const char *>(extData + 1), len);
+                        m_comment += QString::fromLatin1(rawString);
+                    }
                     default:
                         break;
                     }
@@ -182,6 +187,8 @@ qsizetype GifReader::imageCount() const {
     return m_framesCount >= 0 ? m_framesCount : 0;
 }
 
+QString GifReader::comment() const { return m_comment; }
+
 bool GifReader::closeHandleWithError(GifFileType *handle) {
     closeHandle(handle);
     invalidCache();
@@ -206,4 +213,5 @@ void GifReader::clearCache() {
     m_framesCount = 0;
     m_data.clear();
     m_delays.clear();
+    m_comment.clear();
 }

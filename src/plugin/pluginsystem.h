@@ -21,6 +21,8 @@ public:
 
     const IWingPlugin *plugin(qsizetype index) const;
 
+    void LoadPlugin();
+
 signals:
 
 private:
@@ -32,6 +34,8 @@ private:
     void connectUIInterface(IWingPlugin *plg);
 
 private:
+    void loadPlugin(const QFileInfo &fileinfo);
+
     bool loadPlugin(IWingPlugin *p);
     void connectBaseInterface(IWingPlugin *plg);
     void connectInterface(IWingPlugin *plg);

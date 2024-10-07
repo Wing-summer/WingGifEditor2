@@ -24,8 +24,10 @@
         <file>images/gifplay.png</file>
         <file>images/gifs.png</file>
         <file>images/icon.png</file>
+        <file>images/info.png</file>
         <file>images/jmp.png</file>
         <file>images/last.png</file>
+        <file>images/log.png</file>
         <file>images/model.png</file>
         <file>images/mvb.png</file>
         <file>images/mvf.png</file>
@@ -49,13 +51,12 @@
         <file>images/rmr.png</file>
         <file>images/rotatel.png</file>
         <file>images/rotater.png</file>
-        <file>images/rwg.png</file>
         <file>images/save.png</file>
         <file>images/saveas.png</file>
         <file>images/saved.png</file>
-        <file>images/saveg.png</file>
         <file>images/scale.png</file>
         <file>images/scaledelay.png</file>
+        <file>images/scaleview.png</file>
         <file>images/selall.png</file>
         <file>images/selrev.png</file>
         <file>images/setdelay.png</file>
