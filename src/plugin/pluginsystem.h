@@ -23,7 +23,7 @@ public:
 
     void LoadPlugin();
 
-signals:
+    void callPluginProcess(QImage &image, int delay, qsizetype index);
 
 private:
     PluginSystem(QObject *parent = nullptr);

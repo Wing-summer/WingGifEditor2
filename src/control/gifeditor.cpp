@@ -9,14 +9,9 @@ GifEditor::GifEditor(const QImage &img, QWidget *parent)
             &GifEditor::selRectChanged);
     setScene(scene);
     rubber = new QRubberBand(QRubberBand::Line, this);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
-void GifEditor::setImage(const QImage &img) {
-    scene->setFrameImg(img);
-    resetTransform();
-}
+void GifEditor::setImage(const QImage &img) { scene->setFrameImg(img); }
 
 void GifEditor::setCropMode(bool b) { scene->setCuttingMode(b); }
 

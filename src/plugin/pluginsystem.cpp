@@ -58,6 +58,13 @@ void PluginSystem::LoadPlugin() {
     Logger::info(tr("PluginLoadingFinished"));
 }
 
+void PluginSystem::callPluginProcess(QImage &image, int delay,
+                                     qsizetype index) {
+    for (auto &p : loadedplgs) {
+        p->onPreviewGifFrame(image, index, delay);
+    }
+}
+
 bool PluginSystem::checkThreadAff() {
     if (QThread::currentThread() != qApp->thread()) {
         Logger::warning(

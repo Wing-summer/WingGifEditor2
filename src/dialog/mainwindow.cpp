@@ -83,7 +83,10 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
             this,
             [=](const QModelIndex &current, const QModelIndex & /*previous*/) {
                 auto i = current.row();
-                _editor->setImage(_model->image(i));
+                auto img = _model->image(i);
+                auto delay = _model->delay(i);
+                PluginSystem::instance().callPluginProcess(img, delay, i);
+                _editor->setImage(img);
                 updateGifMessage();
             });
     connect(_model, &QAbstractListModel::rowsInserted, this,
@@ -225,7 +228,7 @@ void MainWindow::on_new_frompics() {
             dw.dialog()->setLabelText(tr("NewFromPicsGif"));
             dw.dialog()->setRange(0, 0);
             if (loadfromImages(d.getResult(), getNewFrameInterval())) {
-                _curfilename = QStringLiteral(":"); //表示新建
+                _curfilename = QStringLiteral(":"); // 表示新建
                 setSaved(false);
 
                 _gallery->setCurrentIndex(_model->index(0));
@@ -245,7 +248,7 @@ void MainWindow::on_new_fromgifs() {
             // WaitingDialog dw;
             // dw.start(tr("NewFromGifsGif"));
             if (loadfromGifs(d.getResult())) {
-                _curfilename = QStringLiteral(":"); //表示新建
+                _curfilename = QStringLiteral(":"); // 表示新建
                 setSaved(false);
 
                 _gallery->setCurrentIndex(_model->index(0));
@@ -443,7 +446,7 @@ void MainWindow::on_paste() {
 void MainWindow::on_del() {
     _player->stop();
     QVector<int> indices;
-    for (auto item : _gallery->selectionModel()->selectedIndexes()) {
+    for (auto &item : _gallery->selectionModel()->selectedIndexes()) {
         indices.append(item.row());
     }
     undo.push(new RemoveFrameCommand(_model, indices));
@@ -632,7 +635,7 @@ void MainWindow::on_setdelay() {
     if (ok) {
         QVector<int> is;
         if (!isGlobal) {
-            for (auto i : indices) {
+            for (auto &i : indices) {
                 is.append(i.row());
             }
         }
@@ -657,7 +660,7 @@ void MainWindow::on_scaledelay() {
         if (!isGlobal) {
             auto indices = _gallery->selectionModel()->selectedRows();
 
-            for (auto i : indices) {
+            for (auto &i : indices) {
                 is.append(i.row());
             }
         }
@@ -811,7 +814,7 @@ void MainWindow::on_applypic() {
         QImage img;
         if (img.load(filename)) {
             if (img.size() == _model->frameSize()) {
-                for (auto i : indices) {
+                for (auto &i : indices) {
                     auto index = i.row();
                     rows.append(index);
                     QImage bimg = _model->image(index).copy();
