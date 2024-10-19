@@ -1,5 +1,9 @@
 #include "gifcontentmodel.h"
 
+#ifdef Q_OS_WIN
+#include <ppl.h>
+#endif
+
 GifContentModel::GifContentModel(QObject *parent)
     : QAbstractListModel(parent) {}
 
@@ -209,10 +213,16 @@ void GifContentModel::cropFrames(const QRect &rect) {
     }
     Q_ASSERT(_data.first().rect().contains(rect));
 
+#ifdef Q_OS_WIN
+    concurrency::parallel_for_each(
+        _data.begin(), _data.end(),
+        [rect](QImage &img) { img = img.copy(rect); });
+#else
 #pragma omp parallel for
     for (auto &img : _data) {
         img = img.copy(rect);
     }
+#endif
 
     emit dataChanged(this->index(0), this->index(_data.size() - 1));
     updateLinkedListViewCurrent();
@@ -261,11 +271,19 @@ void GifContentModel::scaleFrames(int width, int height) {
         return;
     }
 
+#ifdef Q_OS_WIN
+    concurrency::parallel_for_each(
+        _data.begin(), _data.end(), [width, height](QImage &img) {
+            img = img.scaled(width, height, Qt::IgnoreAspectRatio,
+                             Qt::SmoothTransformation);
+        });
+#else
 #pragma omp parallel for
     for (auto &img : _data) {
         img = img.scaled(width, height, Qt::IgnoreAspectRatio,
                          Qt::SmoothTransformation);
     }
+#endif
 
     emit dataChanged(this->index(0), this->index(_data.size() - 1));
     updateLinkedListViewCurrent();
@@ -275,17 +293,29 @@ void GifContentModel::flipFrames(Qt::Orientation dir, int index,
                                  qsizetype count) {
     switch (dir) {
     case Qt::Horizontal: {
+#ifdef Q_OS_WIN
+        concurrency::parallel_for_each(
+            _data.begin(), _data.end(),
+            [](QImage &img) { img = img.mirrored(true, false); });
+#else
 #pragma omp parallel for
         for (auto &img : _data) {
             img = img.mirrored(true, false);
         }
+#endif
         break;
     }
     case Qt::Vertical: {
+#ifdef Q_OS_WIN
+        concurrency::parallel_for_each(
+            _data.begin(), _data.end(),
+            [](QImage &img) { img = img.mirrored(); });
+#else
 #pragma omp parallel for
         for (auto &img : _data) {
             img = img.mirrored();
         }
+#endif
         break;
     }
     }
@@ -313,10 +343,19 @@ void GifContentModel::reverseFrames(qsizetype begin, qsizetype end) {
 void GifContentModel::rotateFrames(bool clockwise) {
     QTransform trans;
     trans.rotate(clockwise ? -90 : 90);
+
+#ifdef Q_OS_WIN
+    concurrency::parallel_for_each(
+        _data.begin(), _data.end(), [&trans](QImage &img) {
+            img = img.transformed(trans, Qt::SmoothTransformation);
+        });
+#else
 #pragma omp parallel for
     for (auto &img : _data) {
         img = img.transformed(trans, Qt::SmoothTransformation);
     }
+#endif
+
     emit dataChanged(this->index(0), this->index(_data.size() - 1));
     updateLinkedListViewCurrent();
 }

@@ -13,6 +13,8 @@ AboutSoftwareDialog::AboutSoftwareDialog(QWidget *parent)
 
     ui->lblVersion->setText(WINGGIF_VERSION);
 
+    _dialog->setWindowTitle(tr("About"));
+
     Utilities::moveToCenter(this);
 }
 

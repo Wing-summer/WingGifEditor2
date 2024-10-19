@@ -1,5 +1,7 @@
 #include "waitingloop.h"
 
+#include <QApplication>
+
 WaitingLoop::WaitingLoop(const QString &tip) {
     dw.dialog()->setCancelButton(nullptr);
     dw.dialog()->setLabelText(tip);

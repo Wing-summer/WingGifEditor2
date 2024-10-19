@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+#include <QDesktopServices>
 #include <QSplitter>
 #include <QStatusBar>
 
@@ -121,6 +122,19 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     connect(_player, &PlayGifManager::playStateChanged, this,
             &MainWindow::updatePlayState);
 
+    auto psc = new QShortcut(QKeySequence(Qt::Key_Space), this);
+    psc->setContext(Qt::ShortcutContext::WindowShortcut);
+    connect(psc, &QShortcut::activated, this, [=] {
+        if (_curfilename.isEmpty()) {
+            return;
+        }
+        if (_player->isPlaying()) {
+            on_stop();
+        } else {
+            on_play();
+        }
+    });
+
     connect(&undo, &QUndoStack::canUndoChanged, this, [=](bool b) {
         m_toolBtneditors.value(ToolButtonIndex::UNDO_ACTION)->setEnabled(b);
     });
@@ -223,10 +237,7 @@ void MainWindow::on_new_frompics() {
     if (ensureSafeClose()) {
         NewDialog d(NewType::FromPics, this);
         if (d.exec()) {
-            WingProgressDialog dw;
-            dw.dialog()->setCancelButton(nullptr);
-            dw.dialog()->setLabelText(tr("NewFromPicsGif"));
-            dw.dialog()->setRange(0, 0);
+            WaitingLoop dw(tr("NewFromPicsGif"));
             if (loadfromImages(d.getResult(), getNewFrameInterval())) {
                 _curfilename = QStringLiteral(":"); // 表示新建
                 setSaved(false);
@@ -235,7 +246,6 @@ void MainWindow::on_new_frompics() {
                 setEditModeEnabled(true);
             } else {
             }
-            dw.pdialog()->close();
         }
     }
 }
@@ -245,8 +255,7 @@ void MainWindow::on_new_fromgifs() {
     if (ensureSafeClose()) {
         NewDialog d(NewType::FromGifs, this);
         if (d.exec()) {
-            // WaitingDialog dw;
-            // dw.start(tr("NewFromGifsGif"));
+            WaitingLoop dw(tr("NewFromGifsGif"));
             if (loadfromGifs(d.getResult())) {
                 _curfilename = QStringLiteral(":"); // 表示新建
                 setSaved(false);
@@ -255,7 +264,6 @@ void MainWindow::on_new_fromgifs() {
                 setEditModeEnabled(true);
             } else {
             }
-            // dw.close();
         }
     }
 }
@@ -372,16 +380,8 @@ void MainWindow::on_export() {
 void MainWindow::on_close() {
     _player->stop();
     if (ensureSafeClose()) {
-
-        // editor->setBackgroudPix(QPixmap(":/images/icon.png"));
-        // editor->fitPicEditor();
-        // editor->scale(0.5, 0.5);
-        // iSaved->setPixmap(infoSaveg);
-        // iReadWrite->setPixmap(inforwg);
-        // status->showMessage("");
-
+        _editor->setImage(QImage(NAMEICONRES(QStringLiteral("icon"))));
         _model->clearData();
-
         _curfilename.clear();
         undo.clear();
         setEditModeEnabled(false);
@@ -834,9 +834,16 @@ void MainWindow::on_fullscreen() { this->showFullScreen(); }
 
 void MainWindow::on_about() { AboutSoftwareDialog().exec(); }
 
-void MainWindow::on_sponsor() {}
+void MainWindow::on_sponsor() {
+    QDesktopServices::openUrl(
+        QUrl(QStringLiteral("https://github.com/Wing-summer/"
+                            "WingGifEditor2#%E6%8D%90%E5%8A%A9")));
+}
 
-void MainWindow::on_wiki() {}
+void MainWindow::on_wiki() {
+    QDesktopServices::openUrl(QUrl(
+        QStringLiteral("https://github.com/Wing-summer/WingGifEditor2/wiki")));
+}
 
 RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
     auto shortcuts = QKeySequences::instance();
@@ -851,6 +858,7 @@ RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
 
         addPannelAction(pannel, QStringLiteral("open"), tr("Open"),
                         &MainWindow::on_open, QKeySequence::Open);
+
         addPannelAction(pannel, QStringLiteral("recent"), tr("RecentFiles"),
                         EMPTY_FUNC, {}, m_recentMenu);
     }
@@ -858,25 +866,26 @@ RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
     {
         auto pannel = tab->addGroup(tr("Save"));
 
-        auto a = addPannelAction(pannel, QStringLiteral("save"), tr("Save"),
-                                 &MainWindow::on_save, QKeySequence::Save);
-        m_editStateWidgets << a;
+        m_editStateWidgets << addPannelAction(pannel, QStringLiteral("save"),
+                                              tr("Save"), &MainWindow::on_save,
+                                              QKeySequence::Save);
+        m_editStateWidgets << addPannelAction(
+            pannel, QStringLiteral("saveas"), tr("SaveAs"),
+            &MainWindow::on_saveas,
+            shortcuts.keySequence(QKeySequences::Key::SAVE_AS));
 
-        a = addPannelAction(pannel, QStringLiteral("saveas"), tr("SaveAs"),
-                            &MainWindow::on_saveas,
-                            shortcuts.keySequence(QKeySequences::Key::SAVE_AS));
-        m_editStateWidgets << a;
-
-        a = addPannelAction(pannel, QStringLiteral("export"), tr("Export"),
-                            &MainWindow::on_export,
-                            shortcuts.keySequence(QKeySequences::Key::EXPORT));
-        m_editStateWidgets << a;
-        a = addPannelAction(
+        m_editStateWidgets << addPannelAction(
+            pannel, QStringLiteral("export"), tr("Export"),
+            &MainWindow::on_export,
+            shortcuts.keySequence(QKeySequences::Key::EXPORT));
+        m_editStateWidgets << addPannelAction(
             pannel, QStringLiteral("info"), tr("FileInfo"), [=] {
                 FileInfoDialog(_curfilename, _model->frameSize(), _comment)
                     .exec();
             });
-        m_editStateWidgets << a;
+        m_editStateWidgets << addPannelAction(pannel, QStringLiteral("close"),
+                                              tr("Close"),
+                                              &MainWindow::on_close);
     }
 
     return tab;
@@ -988,11 +997,10 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
             &MainWindow::on_last, QKeySequence(Qt::Key_Left));
 
         _playDisWidgets << addPannelAction(pannel, QStringLiteral("gifplay"),
-                                           tr("Play"), &MainWindow::on_play,
-                                           QKeySequence(Qt::Key_F5));
-        _btnPlayerStop =
-            addPannelAction(pannel, QStringLiteral("pause"), tr("Stop"),
-                            &MainWindow::on_stop, QKeySequence(Qt::Key_F10));
+                                           tr("Play"), &MainWindow::on_play);
+        _btnPlayerStop = addPannelAction(pannel, QStringLiteral("pause"),
+                                         tr("Stop"), &MainWindow::on_stop);
+
         _playDisWidgets << addPannelAction(
             pannel, QStringLiteral("foreword"), tr("NextFrame"),
             &MainWindow::on_next, QKeySequence(Qt::Key_Right));
@@ -1022,6 +1030,12 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
                                   [this] { _editor->setZoom(250); }));
         menu->addAction(newAction(QStringLiteral("300%"),
                                   [this] { _editor->setZoom(300); }));
+        menu->addSeparator();
+        auto a =
+            newAction(tr("FitInView"), [this] { _editor->fitInEditorView(); });
+        a->setIcon(ICONRES("fitinview"));
+        menu->addAction(a);
+
         addPannelAction(pannel, QStringLiteral("scaleview"), tr("Scale"),
                         EMPTY_FUNC, {}, menu);
 
@@ -1096,19 +1110,27 @@ void MainWindow::openGif(const QString &filename) {
 
 bool MainWindow::readGif(const QString &gif) {
     GifReader reader;
+    connect(&reader, &GifReader::sigUpdateUIProcess, this,
+            [] { qApp->processEvents(); });
+
+    WaitingLoop dw(tr("ReadingGif"));
     if (!reader.load(gif)) {
         return false;
     }
     _comment = reader.comment();
     _model->readGifReader(&reader);
     _gallery->setCurrentIndex(_model->index(0));
+    _editor->fitOpenSize();
     return true;
 }
 
 bool MainWindow::writeGif(const QString &gif, unsigned int loopCount,
                           const QString &comment) {
     GifWriter writer(_model->width(), _model->height());
+    connect(&writer, &GifWriter::sigUpdateUIProcess, this,
+            [] { qApp->processEvents(); });
 
+    WaitingLoop dw(tr("WritingGif"));
     writer.setExtString(comment);
     writer.pushRange(_model->images(), _model->delays());
     auto ret = writer.save(gif, loopCount);
@@ -1128,8 +1150,14 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
         return false;
     }
 
-    for (int i = 0; i < _model->frameCount(); ++i) {
-        _model->image(i).save(dir.absoluteFilePath(QString::number(i)), ext);
+    {
+        WaitingLoop dw(tr("ExportingGif"));
+
+#pragma omp parallel for
+        for (int i = 0; i < _model->frameCount(); ++i) {
+            _model->image(i).save(dir.absoluteFilePath(QString::number(i)),
+                                  ext);
+        }
     }
 
     return true;

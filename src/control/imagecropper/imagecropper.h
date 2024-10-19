@@ -20,6 +20,8 @@ public:
 
     QRectF selRect() const;
 
+    QSize imageSize() const;
+
     void setSelRect(int x, int y, int w, int h);
 
 public slots:

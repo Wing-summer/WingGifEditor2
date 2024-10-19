@@ -13,6 +13,22 @@ GifEditor::GifEditor(const QImage &img, QWidget *parent)
 
 void GifEditor::setImage(const QImage &img) { scene->setFrameImg(img); }
 
+void GifEditor::fitOpenSize() {
+    auto imgSize = scene->frameImageSize();
+    auto wSize = this->size();
+    if (imgSize.width() > wSize.width() || imgSize.height() > wSize.height()) {
+        fitInEditorView();
+    } else {
+        resetTransform();
+    }
+}
+
+void GifEditor::fitInEditorView() {
+    auto r = scene->contentBounding();
+    setSceneRect(r);
+    fitInView(r, Qt::KeepAspectRatio);
+}
+
 void GifEditor::setCropMode(bool b) { scene->setCuttingMode(b); }
 
 void GifEditor::zoomIn() { scale(1.1, 1.1); }

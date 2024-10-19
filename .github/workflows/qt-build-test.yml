@@ -11,9 +11,14 @@ jobs:
 
     strategy:
       matrix: 
-        os: [ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
         qt_version: [5.15.2, 6.6.2]
-        arch: [gcc_64]
+        arch: [win64_msvc2019_64, gcc_64]
+        exclude:
+          - os: windows-latest
+            arch: gcc_64
+          - os: ubuntu-latest
+            arch: win64_msvc2019_64
 
     steps:
     - uses: actions/checkout@v3

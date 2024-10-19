@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QTimer>
 
 class WaitingLoop : public QObject {
     Q_OBJECT

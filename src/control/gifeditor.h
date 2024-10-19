@@ -12,16 +12,19 @@ public:
     GifEditor(const QImage &img, QWidget *parent = nullptr);
     void setImage(const QImage &img);
 
+    QRectF selRect() const;
+
+public slots:
+    void setSelRect(int x, int y, int w, int h);
+    void fitOpenSize();
+
+    void fitInEditorView();
+
     void setCropMode(bool b);
 
     void zoomIn();
     void zoomOut();
     void setZoom(int value);
-
-    QRectF selRect() const;
-
-public slots:
-    void setSelRect(int x, int y, int w, int h);
 
 signals:
     void selRectChanged(QRectF rect);

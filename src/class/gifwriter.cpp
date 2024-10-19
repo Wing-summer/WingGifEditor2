@@ -2,8 +2,9 @@
 
 #include <QPainter>
 
-GifWriter::GifWriter(int width, int height, const QString &filename)
-    : m_width(width), m_height(height), m_filename(filename) {
+GifWriter::GifWriter(int width, int height, const QString &filename,
+                     QObject *parent)
+    : QObject(parent), m_width(width), m_height(height), m_filename(filename) {
     Q_ASSERT(width > 0 && height > 0);
 }
 
@@ -98,6 +99,8 @@ bool GifWriter::save(const QString &filename, unsigned int loopCount) {
         if (!addFrame(handle, key, key.rect(), m_delays.at(0), resources))
             return closeEHandleWithError(handle);
 
+        emit sigUpdateUIProcess();
+
         int delta = 0;
 
         for (qsizetype i = 1; i < m_data.size(); ++i) {
@@ -108,6 +111,8 @@ bool GifWriter::save(const QString &filename, unsigned int loopCount) {
 
             if (!result)
                 return closeEHandleWithError(handle);
+
+            emit sigUpdateUIProcess();
         }
 
         closeEHandle(handle);

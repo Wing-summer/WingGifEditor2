@@ -26,6 +26,8 @@ bool ImageCropper::proportionFixed() const { return pimpl->isProportionFixed; }
 
 QRectF ImageCropper::selRect() const { return pimpl->croppingRect; }
 
+QSize ImageCropper::imageSize() const { return pimpl->imageForCropping.size(); }
+
 void ImageCropper::setSelRect(int x, int y, int w, int h) {
     if (pimpl->isProportionFixed) {
         pimpl->croppingRect = QRectF(

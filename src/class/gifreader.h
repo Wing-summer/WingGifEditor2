@@ -4,12 +4,16 @@
 #include "giflib/gif_lib.h"
 
 #include <QImage>
+#include <QObject>
 #include <QString>
 #include <QVector>
 
-class GifReader {
+class GifReader : public QObject {
+    Q_OBJECT
+
 public:
-    explicit GifReader(const QString &filename = QString());
+    explicit GifReader(const QString &filename = QString(),
+                       QObject *parent = nullptr);
 
     virtual ~GifReader();
 
@@ -32,6 +36,9 @@ public:
     qsizetype imageCount() const;
 
     QString comment() const;
+
+signals:
+    void sigUpdateUIProcess();
 
 private:
     bool closeHandleWithError(GifFileType *handle);

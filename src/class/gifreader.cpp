@@ -3,7 +3,8 @@
 #include <QFile>
 #include <QPainter>
 
-GifReader::GifReader(const QString &filename) {
+GifReader::GifReader(const QString &filename, QObject *parent)
+    : QObject(parent) {
     if (QFile::exists(filename)) {
         load(filename);
     }
@@ -161,6 +162,8 @@ bool GifReader::load(const QString &filename) {
             default:
                 break;
             }
+
+            emit sigUpdateUIProcess();
         } while (recordType != TERMINATE_RECORD_TYPE);
 
         return closeHandle(handle);

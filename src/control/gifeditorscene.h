@@ -15,6 +15,10 @@ public:
 
     void setFrameImg(const QImage &img);
 
+    QRectF contentBounding() const;
+
+    QSize frameImageSize() const;
+
     QRectF selRect() const;
 
 public slots:
@@ -26,6 +30,7 @@ signals:
 private:
     ImageCropper *sel;
     QPointF oldpos;
+    QGraphicsProxyWidget *gw;
 };
 
 #endif // GIFEDITORSCENE_H

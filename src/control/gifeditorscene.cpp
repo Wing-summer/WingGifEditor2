@@ -9,14 +9,14 @@ GifEditorScene::GifEditorScene(const QImage &img, QObject *parent)
     sel->setBackgroundColor(Qt::transparent);
     sel->setCropperVisible(false);
     sel->setImage(img);
-    auto w = addWidget(sel);
-    connect(sel, &ImageCropper::sizeChanged, w, [=] {
+    gw = addWidget(sel);
+    connect(sel, &ImageCropper::sizeChanged, gw, [=] {
         // call the internal updateProxyGeometryFromWidget
-        w->resetTransform();
-        w->setWidget(nullptr);
-        w->setWidget(sel);
+        gw->resetTransform();
+        gw->setWidget(nullptr);
+        gw->setWidget(sel);
         // center the image
-        setSceneRect(QRectF(QPointF(), w->size()));
+        setSceneRect(QRectF(QPointF(), gw->size()));
     });
     connect(sel, &ImageCropper::selRectChanged, this,
             &GifEditorScene::selRectChanged);
@@ -31,6 +31,10 @@ void GifEditorScene::setCuttingMode(bool value) {
 }
 
 void GifEditorScene::setFrameImg(const QImage &img) { sel->setImage(img); }
+
+QRectF GifEditorScene::contentBounding() const { return gw->boundingRect(); }
+
+QSize GifEditorScene::frameImageSize() const { return sel->imageSize(); }
 
 QRectF GifEditorScene::selRect() const { return sel->selRect(); }
 

@@ -5,11 +5,13 @@
 
 #include <QImage>
 #include <QMap>
+#include <QObject>
 #include <QString>
 
 #include <memory>
 
-class GifWriter {
+class GifWriter : public QObject {
+    Q_OBJECT
 private:
     struct Color {
         unsigned char red = 0;
@@ -280,7 +282,8 @@ private:
 
 public:
     explicit GifWriter(int width, int height,
-                       const QString &filename = QString());
+                       const QString &filename = QString(),
+                       QObject *parent = nullptr);
 
     void push(const QImage &img, int delay);
 
@@ -305,6 +308,9 @@ public:
     QString extString() const;
 
     void setExtString(const QString &newExtString);
+
+signals:
+    void sigUpdateUIProcess();
 
 private:
     bool closeEHandle(GifFileType *handle);
