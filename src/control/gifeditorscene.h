@@ -28,6 +28,16 @@ signals:
     void selRectChanged(const QRectF &rect);
 
 private:
+    // Function to calculate luminance of a color
+    double getLuminance(const QColor &color);
+
+    // Function to get the contrasting color (white or black)
+    QColor getContrastingColor(const QColor &color);
+
+    // Function to get the main theme color from the image
+    QColor getMainThemeColor(const QImage &image);
+
+private:
     ImageCropper *sel;
     QPointF oldpos;
     QGraphicsProxyWidget *gw;

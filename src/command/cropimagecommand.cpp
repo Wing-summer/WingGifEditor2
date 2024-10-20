@@ -7,6 +7,12 @@ CropImageCommand::CropImageCommand(GifContentModel *helper, const QRect &rect,
     buffer = helper->images();
 }
 
-void CropImageCommand::undo() { gif->swapFrames(buffer); }
+void CropImageCommand::undo() {
+    gif->swapFrames(buffer);
+    gif->linkedGifEditor()->fitOpenSize();
+}
 
-void CropImageCommand::redo() { gif->cropFrames(_rect); }
+void CropImageCommand::redo() {
+    gif->cropFrames(_rect);
+    gif->linkedGifEditor()->fitOpenSize();
+}

@@ -3,6 +3,8 @@
 #include <QPushButton>
 
 CropGifDialog::CropGifDialog(QWidget *parent) : FramelessDialogBase(parent) {
+    setAttribute(Qt::WA_ShowWithoutActivating);
+
     auto widget = new QWidget(this);
     auto layout = new QVBoxLayout(widget);
 
@@ -63,6 +65,8 @@ CropGifDialog::CropGifDialog(QWidget *parent) : FramelessDialogBase(parent) {
 
     layout->addWidget(btnBox);
     setFocusPolicy(Qt::StrongFocus);
+
+    widget->setMinimumWidth(300);
 
     buildUpContent(widget);
 

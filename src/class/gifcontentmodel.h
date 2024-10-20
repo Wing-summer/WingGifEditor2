@@ -7,6 +7,7 @@
 #include <QListView>
 #include <QStyledItemDelegate>
 
+#include "control/gifeditor.h"
 #include "utilities.h"
 
 class GifContentModel : public QAbstractListModel {
@@ -19,7 +20,11 @@ public:
 
     void setLinkedListView(QListView *view);
 
+    void setLinkedEditor(GifEditor *editor);
+
     QListView *linkedListView() const;
+
+    GifEditor *linkedGifEditor() const;
 
     QImage image(qsizetype index) const;
 
@@ -105,6 +110,7 @@ private:
     QVector<int> _delays;
 
     QListView *_view = nullptr;
+    GifEditor *_editor = nullptr;
 };
 
 #endif // GIFCONTENTMODEL_H

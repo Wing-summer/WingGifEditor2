@@ -19,6 +19,8 @@ void GifEditor::fitOpenSize() {
     if (imgSize.width() > wSize.width() || imgSize.height() > wSize.height()) {
         fitInEditorView();
     } else {
+        auto r = scene->contentBounding();
+        setSceneRect(r);
         resetTransform();
     }
 }

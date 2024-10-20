@@ -78,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     splitter->addWidget(_gallery);
     _model = new GifContentModel(_gallery);
     _model->setLinkedListView(_gallery);
+    _model->setLinkedEditor(_editor);
     _gallery->setSelectionMode(QAbstractItemView::ExtendedSelection);
     _gallery->setMaximumHeight(300);
     connect(_gallery->selectionModel(), &QItemSelectionModel::currentRowChanged,
@@ -147,6 +148,10 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     });
 
     _cuttingdlg = new CropGifDialog(this);
+
+    auto w = qApp->primaryScreen()->availableSize().width();
+    _cuttingdlg->move(w - _cuttingdlg->width(), 0);
+
     connect(_cuttingdlg, &CropGifDialog::selRectChanged, _editor,
             &GifEditor::setSelRect);
     connect(_cuttingdlg, &CropGifDialog::crop, this,
@@ -218,17 +223,19 @@ void MainWindow::buildUpRibbonBar() {
     _playDisWidgets << buildAboutPage(m_ribbon->addTab(tr("About")));
     connect(m_ribbon, &Ribbon::onDragDropFiles, this,
             [=](const QStringList &files) {
-                if (files.size() == 1) {
-                    readGif(files.first());
-                    return;
+                QString f;
+
+                if (files.size() > 1) {
+                    bool ok;
+                    f = WingInputDialog::getItem(this, tr("ChooseFile"),
+                                                 tr("Choose to open"), files, 0,
+                                                 false, &ok);
+                    if (!ok) {
+                        return;
+                    }
                 }
-                bool ok;
-                auto f = WingInputDialog::getItem(this, tr("ChooseFile"),
-                                                  tr("Choose to open"), files,
-                                                  0, false, &ok);
-                if (ok) {
-                    readGif(f);
-                }
+
+                openGif(f);
             });
 }
 
@@ -384,6 +391,7 @@ void MainWindow::on_close() {
         _model->clearData();
         _curfilename.clear();
         undo.clear();
+        _editor->fitOpenSize();
         setEditModeEnabled(false);
     }
 }
@@ -1013,12 +1021,16 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
         auto pannel = tab->addGroup(tr("LoopUp"));
 
         auto menu = new QMenu(this);
+
+        menu->addAction(
+            newAction(tr("FitInView"), [this] { _editor->fitInEditorView(); }));
+        menu->addAction(newAction(QStringLiteral("100%"),
+                                  [this] { _editor->setZoom(100); }));
+        menu->addSeparator();
         menu->addAction(
             newAction(QStringLiteral("80%"), [this] { _editor->setZoom(80); }));
         menu->addAction(
             newAction(QStringLiteral("90%"), [this] { _editor->setZoom(90); }));
-        menu->addAction(newAction(QStringLiteral("100%"),
-                                  [this] { _editor->setZoom(100); }));
         menu->addSeparator();
         menu->addAction(newAction(QStringLiteral("120%"),
                                   [this] { _editor->setZoom(120); }));
@@ -1030,11 +1042,6 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
                                   [this] { _editor->setZoom(250); }));
         menu->addAction(newAction(QStringLiteral("300%"),
                                   [this] { _editor->setZoom(300); }));
-        menu->addSeparator();
-        auto a =
-            newAction(tr("FitInView"), [this] { _editor->fitInEditorView(); });
-        a->setIcon(ICONRES("fitinview"));
-        menu->addAction(a);
 
         addPannelAction(pannel, QStringLiteral("scaleview"), tr("Scale"),
                         EMPTY_FUNC, {}, menu);
@@ -1092,6 +1099,7 @@ RibbonTabContent *MainWindow::buildAboutPage(RibbonTabContent *tab) {
 
 void MainWindow::openGif(const QString &filename) {
     if (filename == _curfilename) {
+        Toast::toast(this, QStringLiteral("open"), tr("OpenedGif"));
         return;
     }
 
@@ -1119,7 +1127,12 @@ bool MainWindow::readGif(const QString &gif) {
     }
     _comment = reader.comment();
     _model->readGifReader(&reader);
-    _gallery->setCurrentIndex(_model->index(0));
+    if (_gallery->currentIndex().row() == 0) {
+        auto index = _model->index(0);
+        emit _gallery->selectionModel()->currentRowChanged(index, index);
+    } else {
+        _gallery->setCurrentIndex(_model->index(0));
+    }
     _editor->fitOpenSize();
     return true;
 }
@@ -1284,7 +1297,7 @@ void MainWindow::loadCacheIcon() {
 
 void MainWindow::updateGifMessage() {
     if (_curfilename.isEmpty()) {
-        m_status->showMessage(QStringLiteral("-"));
+        m_status->showMessage({});
     } else {
         m_status->showMessage(tr("Frame: %1/%2")
                                   .arg(_gallery->currentIndex().row() + 1)

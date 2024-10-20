@@ -41,7 +41,6 @@ void ImageCropper::setSelRect(int x, int y, int w, int h) {
 void ImageCropper::setImage(const QImage &_image) {
     pimpl->imageForCropping = _image;
     setFixedSize(_image.size());
-
     update();
 }
 

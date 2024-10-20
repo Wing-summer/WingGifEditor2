@@ -6,6 +6,8 @@ LogDialog::LogDialog(QWidget *parent) : FramelessDialogBase(parent) {
     _log->setOpenExternalLinks(true);
     _log->setUndoRedoEnabled(false);
 
+    setWindowTitle(tr("Log"));
+
     buildUpContent(_log);
 }
 

@@ -18,7 +18,11 @@ void GifContentModel::setLinkedListView(QListView *view) {
     _view = view;
 }
 
+void GifContentModel::setLinkedEditor(GifEditor *editor) { _editor = editor; }
+
 QListView *GifContentModel::linkedListView() const { return _view; }
+
+GifEditor *GifContentModel::linkedGifEditor() const { return _editor; }
 
 void GifContentModel::updateLinkedListViewCurrent() const {
     if (_view) {

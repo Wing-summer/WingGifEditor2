@@ -3,9 +3,7 @@
 #include <QPainter>
 
 const unsigned int BANNER_HEIGHT = 20;
-const unsigned int BANNER_COLOR = 0x303030;
 const unsigned int BANNER_ALPHA = 200;
-const unsigned int BANNER_TEXT_COLOR = 0xffffff;
 const unsigned int HIGHLIGHT_ALPHA = 100;
 
 PictureDelegate::PictureDelegate(QObject *parent)
@@ -29,13 +27,13 @@ void PictureDelegate::paint(QPainter *painter,
     QRect bannerRectBottom = bannerRectTop;
     bannerRectBottom.moveBottom(option.rect.bottom());
 
-    QColor bannerColor = QColor(BANNER_COLOR);
+    QColor bannerColor = this->bannerColor;
     bannerColor.setAlpha(BANNER_ALPHA);
     painter->fillRect(bannerRectTop, bannerColor);
     painter->fillRect(bannerRectBottom, bannerColor);
 
     QString filename = index.model()->data(index, Qt::DisplayRole).toString();
-    painter->setPen(BANNER_TEXT_COLOR);
+    painter->setPen(this->bannerTextColor);
     painter->drawText(bannerRectTop, Qt::AlignCenter,
                       QString::number(index.row() + 1));
     painter->drawText(bannerRectBottom, Qt::AlignCenter, filename);
@@ -53,4 +51,22 @@ QSize PictureDelegate::sizeHint(const QStyleOptionViewItem &option,
                                 const QModelIndex &index) const {
     auto s = option.widget->height() - 40;
     return QSize(s * 5 / 4, s);
+}
+
+QColor PictureDelegate::getBannerTextColor() const { return bannerTextColor; }
+
+void PictureDelegate::setBannerTextColor(const QColor &newBannerTextColor) {
+    if (bannerTextColor == newBannerTextColor)
+        return;
+    bannerTextColor = newBannerTextColor;
+    emit bannerTextColorChanged();
+}
+
+QColor PictureDelegate::getBannerColor() const { return bannerColor; }
+
+void PictureDelegate::setBannerColor(const QColor &newBannerColor) {
+    if (bannerColor == newBannerColor)
+        return;
+    bannerColor = newBannerColor;
+    emit bannerColorChanged();
 }

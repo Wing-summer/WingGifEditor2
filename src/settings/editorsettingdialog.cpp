@@ -40,7 +40,6 @@ void EditorSettingDialog::reload() {
     auto &set = SettingManager::instance();
 
     auto langs = LanguageManager::instance().langsDisplay();
-    ui->cbLanguage->addItems(langs);
     auto lang = set.defaultLang();
     if (lang.isEmpty()) {
         ui->cbLanguage->setCurrentIndex(0);
