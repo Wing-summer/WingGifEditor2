@@ -171,9 +171,9 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
             &CropGifDialog::setSelRect);
 
     _logdialog = new LogDialog(this);
-    auto log = Logger::instance();
-    log->setLogLevel(Logger::Level::q5TRACE);
-    connect(log, &Logger::log, _logdialog, &LogDialog::log);
+    auto &log = Logger::instance();
+    log.setLogLevel(Logger::Level::q5TRACE);
+    connect(&log, &Logger::log, _logdialog, &LogDialog::log);
 
     auto &plg = PluginSystem::instance();
     plg.setMainWindow(this);

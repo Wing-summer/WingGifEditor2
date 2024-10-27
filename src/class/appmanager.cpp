@@ -5,6 +5,7 @@
 #include "languagemanager.h"
 #include "skinmanager.h"
 
+#include "class/logger.h"
 #include "dbghelper.h"
 #include "dialog/mainwindow.h"
 
@@ -17,8 +18,9 @@ AppManager::AppManager(int &argc, char *argv[]) : QApplication(argc, argv) {
     setOrganizationName(APP_ORG);
     setApplicationVersion(WINGGIF_VERSION);
 
-    auto args = arguments();
+    Logger::instance();
 
+    auto args = arguments();
     SkinManager::instance();
     LanguageManager::instance();
 

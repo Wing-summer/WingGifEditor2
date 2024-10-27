@@ -61,8 +61,7 @@ public:
 
     static QString getAppDataPath() {
         return QStandardPaths::writableLocation(
-                   QStandardPaths::AppDataLocation) +
-               QDir::separator() + APP_NAME;
+            QStandardPaths::AppDataLocation);
     }
 };
 

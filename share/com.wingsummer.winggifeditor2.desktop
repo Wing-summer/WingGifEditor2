@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=WingHexExplorer
+Name=WingGifEditor2
 Name[zh_CN]=羽云 GIF 编辑器
 Categories=Graphics;2DGraphics;
 Exec="/opt/WingGifEditor2/WingGifEditor2" %F
@@ -8,7 +8,7 @@ Type=Application
 StartupNotify=false
 Terminal=false
 Icon=/opt/WingGifEditor2/images/icon.png
-StartupWMClass=WingGifEditor
+StartupWMClass=WingGifEditor2
 Comment=A lightweight and powerful Gif Editor
 Comment[zh_CN]=一个轻量且强大的 Gif 编辑器
 MimeType=image/gif
