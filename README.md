@@ -55,6 +55,8 @@
 
 &emsp;&emsp;本软件仓库遵循`AGPL-3.0`协议，不得将本软件用于协议之外的用途。
 
+&emsp;&emsp;对于`src/plugin/iwingplugin.h`这个文件，因为开发必须要引用该文件，故采用较为宽松的`BSD 3-Clause`协议，以允许开发可闭源商用插件。
+
 ## 效果图
 
 <p align="center">
