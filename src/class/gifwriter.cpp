@@ -69,16 +69,27 @@ QImage GifWriter::image(qsizetype index) const { return m_data.at(index); }
 
 bool GifWriter::save(const QString &filename, unsigned int loopCount) {
     auto fn = filename.isEmpty() ? m_filename : filename;
-    if (fn.isEmpty() || m_data.isEmpty() || m_delays.isEmpty()) {
+    return saveLazy(fn, loopCount, m_data.size(), m_delays,
+                    [this](qsizetype i) { return m_data.at(i); });
+}
+
+bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
+                         qsizetype frameCount, const QVector<int> &delays,
+                         const std::function<QImage(qsizetype)> &frameProvider) {
+    if (filename.isEmpty() || frameCount <= 0 || delays.size() != frameCount ||
+        !frameProvider) {
         return false;
     }
 
-    auto handle = EGifOpenFileName(fn.toUtf8(), false, nullptr);
+    auto handle = EGifOpenFileName(filename.toUtf8(), false, nullptr);
 
     if (handle) {
         EGifSetGifVersion(handle, true);
 
-        QImage key = m_data.first();
+        QImage key = frameProvider(0);
+        if (key.isNull()) {
+            return closeEHandleWithError(handle);
+        }
 
         Resources res;
         res.init(key);
@@ -113,18 +124,19 @@ bool GifWriter::save(const QString &filename, unsigned int loopCount) {
                 return closeEHandleWithError(handle);
         }
 
-        if (!addFrame(handle, key, key.rect(), m_delays.at(0), resources))
+        if (!addFrame(handle, key, key.rect(), delays.at(0), resources))
             return closeEHandleWithError(handle);
 
         emit sigUpdateUIProcess();
 
         int delta = 0;
 
-        for (qsizetype i = 1; i < m_data.size(); ++i) {
+        for (qsizetype i = 1; i < frameCount; ++i) {
             bool result = false;
+            auto frame = frameProvider(i);
 
-            std::tie(result, delta) = addFrame(
-                handle, key, m_data.at(i), m_delays.at(i) + delta, resources);
+            std::tie(result, delta) =
+                addFrame(handle, key, frame, delays.at(i) + delta, resources);
 
             if (!result)
                 return closeEHandleWithError(handle);
