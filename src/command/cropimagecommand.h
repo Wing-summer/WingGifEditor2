@@ -21,6 +21,9 @@
 #include "class/gifcontentmodel.h"
 #include <QUndoCommand>
 
+#include <QTemporaryDir>
+#include <memory>
+
 class CropImageCommand : public QUndoCommand {
 public:
     CropImageCommand(GifContentModel *model, const QRect &rect,
@@ -31,7 +34,8 @@ public:
 
 private:
     GifContentModel *gif;
-    QVector<QImage> buffer;
+    std::unique_ptr<QTemporaryDir> bufferDir;
+    QVector<QString> bufferFiles;
     QRect _rect;
 };
 

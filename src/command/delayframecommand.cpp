@@ -63,7 +63,9 @@ DelayScaleCommand::DelayScaleCommand(GifContentModel *helper,
     if (indices.isEmpty()) {
         for (auto &time : gif->delays()) {
             olddelay.append(time);
-            time = time * scale / 100;
+            time = qBound(GifContentModel::delayLimitMin(),
+                          time * scale / 100,
+                          GifContentModel::delayLimitMax());
             newdelay.append(time);
         }
 
@@ -71,7 +73,9 @@ DelayScaleCommand::DelayScaleCommand(GifContentModel *helper,
         for (auto i : indices) {
             auto time = gif->delay(i);
             olddelay.append(time);
-            time = time * scale / 100;
+            time = qBound(GifContentModel::delayLimitMin(),
+                          time * scale / 100,
+                          GifContentModel::delayLimitMax());
             newdelay.append(time);
         }
     }

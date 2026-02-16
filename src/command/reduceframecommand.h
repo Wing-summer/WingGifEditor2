@@ -22,6 +22,9 @@
 #include <QMap>
 #include <QUndoCommand>
 
+#include <QTemporaryDir>
+#include <memory>
+
 class ReduceFrameCommand : public QUndoCommand {
 public:
     ReduceFrameCommand(GifContentModel *helper, const QVector<int> &indices,
@@ -34,7 +37,8 @@ public:
 private:
     GifContentModel *gif;
     QVector<int> inter, oldinter;
-    QMap<int, QImage> oldimgs;
+    QMap<int, QString> oldimgFiles;
+    std::unique_ptr<QTemporaryDir> bufferDir;
 };
 
 #endif // REDUCEFRAMECOMMAND_H

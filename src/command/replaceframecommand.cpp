@@ -26,37 +26,24 @@ ReplaceFrameCommand::ReplaceFrameCommand(GifContentModel *helper,
 void ReplaceFrameCommand::undo() {
     auto len = olds.size();
     if (len) {
-        for (auto i = 0; i < len; i++) {
-            auto index = olds.at(i);
-            auto img = gif->image(index);
+        len = qMin(len, bufferimage.size());
+        for (int i = 0; i < len; ++i) {
+            const auto index = olds.at(i);
+            if (index < 0 || index >= gif->frameCount()) {
+                continue;
+            }
+            const auto img = gif->image(index);
             gif->setFrameImage(index, bufferimage.at(i));
-            bufferimage.replace(index, img);
+            bufferimage.replace(i, img);
         }
     } else {
-        len = bufferimage.size();
-        for (auto i = 0; i < len; i++) {
-            auto img = gif->image(i);
+        len = qMin(bufferimage.size(), static_cast<int>(gif->frameCount()));
+        for (int i = 0; i < len; ++i) {
+            const auto img = gif->image(i);
             gif->setFrameImage(i, bufferimage.at(i));
             bufferimage.replace(i, img);
         }
     }
 }
 
-void ReplaceFrameCommand::redo() {
-    auto len = olds.size();
-    if (len) {
-        for (auto i = 0; i < len; i++) {
-            auto index = olds.at(i);
-            auto img = gif->image(index);
-            gif->setFrameImage(index, bufferimage.at(i));
-            bufferimage.replace(index, img);
-        }
-    } else {
-        len = bufferimage.size();
-        for (auto i = 0; i < len; i++) {
-            auto img = gif->image(i);
-            gif->setFrameImage(i, bufferimage.at(i));
-            bufferimage.replace(i, img);
-        }
-    }
-}
+void ReplaceFrameCommand::redo() { undo(); }

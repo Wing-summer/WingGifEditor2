@@ -26,6 +26,10 @@ MoveFrameCommand::MoveFrameCommand(
 
 void MoveFrameCommand::undo() {
     auto lv = gif->linkedListView();
+    if (!lv || !lv->selectionModel()) {
+        return;
+    }
+
     auto cur = lv->currentIndex().row();
     auto sel = lv->selectionModel();
     sel->clearSelection();
@@ -33,20 +37,32 @@ void MoveFrameCommand::undo() {
     switch (dir) {
     case GifContentModel::MoveFrameDirection::Left: {
         for (auto pi = oldindices.crbegin(); pi != oldindices.crend(); ++pi) {
-            gif->moveFrames((*pi) - 1,
-                            GifContentModel::MoveFrameDirection::Right);
-            sel->select(gif->index(*pi), QItemSelectionModel::Select);
+            if ((*pi) - 1 >= 0) {
+                gif->moveFrames((*pi) - 1,
+                                GifContentModel::MoveFrameDirection::Right);
+                sel->select(gif->index(*pi), QItemSelectionModel::Select);
+            }
         }
-        sel->select(gif->index(cur + 1), QItemSelectionModel::Current);
+        if (gif->frameCount() > 0) {
+            sel->select(gif->index(qBound(0, cur + 1,
+                                          static_cast<int>(gif->frameCount() - 1))),
+                        QItemSelectionModel::Current);
+        }
         break;
     }
     case GifContentModel::MoveFrameDirection::Right: {
         for (auto pi = oldindices.cbegin(); pi != oldindices.cend(); ++pi) {
-            gif->moveFrames((*pi) + 1,
-                            GifContentModel::MoveFrameDirection::Left);
-            sel->select(gif->index(*pi), QItemSelectionModel::Select);
+            if ((*pi) + 1 < gif->frameCount()) {
+                gif->moveFrames((*pi) + 1,
+                                GifContentModel::MoveFrameDirection::Left);
+                sel->select(gif->index(*pi), QItemSelectionModel::Select);
+            }
         }
-        sel->select(gif->index(cur - 1), QItemSelectionModel::Current);
+        if (gif->frameCount() > 0) {
+            sel->select(gif->index(qBound(0, cur - 1,
+                                          static_cast<int>(gif->frameCount() - 1))),
+                        QItemSelectionModel::Current);
+        }
         break;
     }
     }
@@ -54,6 +70,10 @@ void MoveFrameCommand::undo() {
 
 void MoveFrameCommand::redo() {
     auto lv = gif->linkedListView();
+    if (!lv || !lv->selectionModel()) {
+        return;
+    }
+
     auto cur = lv->currentIndex().row();
     auto sel = lv->selectionModel();
     sel->clearSelection();
@@ -61,18 +81,30 @@ void MoveFrameCommand::redo() {
     switch (dir) {
     case GifContentModel::MoveFrameDirection::Left: {
         for (auto pi = oldindices.cbegin(); pi != oldindices.cend(); ++pi) {
-            gif->moveFrames(*pi, dir);
-            sel->select(gif->index((*pi) - 1), QItemSelectionModel::Select);
+            if (*pi > 0) {
+                gif->moveFrames(*pi, dir);
+                sel->select(gif->index((*pi) - 1), QItemSelectionModel::Select);
+            }
         }
-        sel->select(gif->index(cur - 1), QItemSelectionModel::Current);
+        if (gif->frameCount() > 0) {
+            sel->select(gif->index(qBound(0, cur - 1,
+                                          static_cast<int>(gif->frameCount() - 1))),
+                        QItemSelectionModel::Current);
+        }
         break;
     }
     case GifContentModel::MoveFrameDirection::Right: {
         for (auto pi = oldindices.crbegin(); pi != oldindices.crend(); ++pi) {
-            gif->moveFrames(*pi, dir);
-            sel->select(gif->index((*pi) + 1), QItemSelectionModel::Select);
+            if (*pi + 1 < gif->frameCount()) {
+                gif->moveFrames(*pi, dir);
+                sel->select(gif->index((*pi) + 1), QItemSelectionModel::Select);
+            }
         }
-        sel->select(gif->index(cur + 1), QItemSelectionModel::Current);
+        if (gif->frameCount() > 0) {
+            sel->select(gif->index(qBound(0, cur + 1,
+                                          static_cast<int>(gif->frameCount() - 1))),
+                        QItemSelectionModel::Current);
+        }
         break;
     }
     }

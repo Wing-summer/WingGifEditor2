@@ -38,6 +38,8 @@ public:
 
     QRectF selRect() const;
 
+    QImage renderedImage() const;
+
 public slots:
     void setSelRect(int x, int y, int w, int h);
 

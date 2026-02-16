@@ -21,6 +21,9 @@
 #include "class/gifcontentmodel.h"
 #include <QUndoCommand>
 
+#include <QTemporaryDir>
+#include <memory>
+
 class ScaleFrameCommand : public QUndoCommand {
 public:
     ScaleFrameCommand(GifContentModel *helper, int w, int h,
@@ -31,7 +34,8 @@ public:
 
 private:
     GifContentModel *gif;
-    QVector<QImage> buffer;
+    std::unique_ptr<QTemporaryDir> bufferDir;
+    QVector<QString> bufferFiles;
     int _w, _h;
 };
 

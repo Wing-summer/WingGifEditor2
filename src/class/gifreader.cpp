@@ -17,11 +17,12 @@
 
 #include "gifreader.h"
 
+#include <QDir>
 #include <QFile>
 #include <QPainter>
 
 GifReader::GifReader(const QString &filename, QObject *parent)
-    : QObject(parent) {
+    : QObject(parent), m_frameCache(48) {
     if (QFile::exists(filename)) {
         load(filename);
     }
@@ -35,14 +36,14 @@ int GifReader::width() const {
     if (isNull()) {
         return 0;
     }
-    return m_data.first().width();
+    return m_frameSize.width();
 }
 
 int GifReader::height() const {
     if (isNull()) {
         return 0;
     }
-    return m_data.first().height();
+    return m_frameSize.height();
 }
 
 bool GifReader::load(const QString &filename) {
@@ -56,6 +57,11 @@ bool GifReader::load(const QString &filename) {
         QImage key;
 
         clearCache();
+
+        m_tmpDir = std::make_unique<QTemporaryDir>();
+        if (!m_tmpDir->isValid()) {
+            return closeHandleWithError(handle);
+        }
 
         do {
             if (DGifGetRecordType(handle, &recordType) == GIF_ERROR)
@@ -122,8 +128,7 @@ bool GifReader::load(const QString &filename) {
                 }
 
                 if (key.isNull()) {
-                    img.convertTo(QImage::Format_ARGB32);
-                    key = img;
+                    key = img.convertToFormat(QImage::Format_ARGB32);
                 } else {
                     QImage tmp = key;
 
@@ -138,8 +143,21 @@ bool GifReader::load(const QString &filename) {
                         key = img;
                 }
 
+                if (m_frameSize.isEmpty()) {
+                    m_frameSize = img.size();
+                }
+
                 m_delays.push_back(animDelay);
-                m_data.push_back(img);
+
+                const auto framePath = m_tmpDir->path() + QDir::separator() +
+                                       QStringLiteral("frame_%1.png")
+                                           .arg(m_framesCount, 6, 10, QLatin1Char('0'));
+                if (!img.save(framePath, "PNG")) {
+                    return closeHandleWithError(handle);
+                }
+
+                m_frameFiles.push_back(framePath);
+                m_frameCache.insert(m_framesCount, new QImage(img));
             } break;
             case EXTENSION_RECORD_TYPE: {
                 GifByteType *extData;
@@ -196,12 +214,40 @@ int GifReader::delay(qsizetype index) const {
 
 QImage GifReader::image(qsizetype index) const {
     Q_ASSERT(m_framesCount >= 0);
-    return m_data.at(index);
+
+    if (auto cached = m_frameCache.object(index)) {
+        return *cached;
+    }
+
+    if (index < 0 || index >= m_frameFiles.size()) {
+        return {};
+    }
+
+    QImage frame;
+    frame.load(m_frameFiles.at(index));
+    if (!frame.isNull()) {
+        m_frameCache.insert(index, new QImage(frame));
+    }
+    return frame;
 }
 
 const QVector<int> GifReader::delays() const { return m_delays; }
 
-const QVector<QImage> GifReader::images() const { return m_data; }
+const QVector<QImage> GifReader::images() const {
+    QVector<QImage> result;
+    result.reserve(m_frameFiles.size());
+    for (qsizetype i = 0; i < m_frameFiles.size(); ++i) {
+        result.push_back(image(i));
+    }
+    return result;
+}
+
+QString GifReader::frameFilePath(qsizetype index) const {
+    if (index < 0 || index >= m_frameFiles.size()) {
+        return {};
+    }
+    return m_frameFiles.at(index);
+}
 
 qsizetype GifReader::imageCount() const {
     return m_framesCount >= 0 ? m_framesCount : 0;
@@ -231,7 +277,10 @@ void GifReader::invalidCache() {
 
 void GifReader::clearCache() {
     m_framesCount = 0;
-    m_data.clear();
+    m_frameSize = QSize();
+    m_frameFiles.clear();
     m_delays.clear();
     m_comment.clear();
+    m_frameCache.clear();
+    m_tmpDir.reset();
 }

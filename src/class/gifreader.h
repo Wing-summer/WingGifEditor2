@@ -21,9 +21,13 @@
 #include "giflib/gif_lib.h"
 
 #include <QImage>
+#include <QCache>
 #include <QObject>
 #include <QString>
+#include <QTemporaryDir>
 #include <QVector>
+
+#include <memory>
 
 class GifReader : public QObject {
     Q_OBJECT
@@ -50,6 +54,8 @@ public:
 
     const QVector<QImage> images() const;
 
+    QString frameFilePath(qsizetype index) const;
+
     qsizetype imageCount() const;
 
     QString comment() const;
@@ -68,8 +74,11 @@ private:
 
 private:
     qsizetype m_framesCount = -1;
+    QSize m_frameSize;
     QVector<int> m_delays;
-    QVector<QImage> m_data;
+    QVector<QString> m_frameFiles;
+    mutable QCache<qsizetype, QImage> m_frameCache;
+    std::unique_ptr<QTemporaryDir> m_tmpDir;
     QString m_comment;
 };
 

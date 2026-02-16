@@ -17,19 +17,58 @@
 
 #include "cropimagecommand.h"
 
+#include <QDir>
+#include <utility>
+
 CropImageCommand::CropImageCommand(GifContentModel *helper, const QRect &rect,
                                    QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper) {
-    _rect = rect;
-    buffer = helper->images();
+    : QUndoCommand(parent), gif(helper), _rect(rect) {
+    bufferDir = std::make_unique<QTemporaryDir>();
+    if (!bufferDir->isValid()) {
+        bufferDir.reset();
+        return;
+    }
+
+    const auto count = helper->frameCount();
+    bufferFiles.reserve(count);
+    for (qsizetype i = 0; i < count; ++i) {
+        const auto path = bufferDir->path() + QDir::separator() +
+                          QStringLiteral("crop_%1.png").arg(i, 6, 10, QLatin1Char('0'));
+        helper->image(i).save(path, "PNG");
+        bufferFiles.push_back(path);
+    }
 }
 
 void CropImageCommand::undo() {
-    gif->swapFrames(buffer);
-    gif->linkedGifEditor()->fitOpenSize();
+    if (!gif || bufferFiles.isEmpty()) {
+        return;
+    }
+
+    QVector<QImage> frames;
+    frames.reserve(bufferFiles.size());
+    for (const auto &path : std::as_const(bufferFiles)) {
+        QImage img;
+        img.load(path);
+        if (!img.isNull()) {
+            frames.push_back(img);
+        }
+    }
+
+    if (frames.size() == gif->frameCount()) {
+        gif->swapFrames(frames);
+        if (auto editor = gif->linkedGifEditor()) {
+            editor->fitOpenSize();
+        }
+    }
 }
 
 void CropImageCommand::redo() {
+    if (!gif) {
+        return;
+    }
+
     gif->cropFrames(_rect);
-    gif->linkedGifEditor()->fitOpenSize();
+    if (auto editor = gif->linkedGifEditor()) {
+        editor->fitOpenSize();
+    }
 }

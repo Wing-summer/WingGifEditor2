@@ -17,6 +17,8 @@
 
 #include "reduceframecommand.h"
 
+#include <QDir>
+
 ReduceFrameCommand::ReduceFrameCommand(GifContentModel *helper,
                                        const QVector<int> &indices,
                                        const QVector<int> &interval,
@@ -24,33 +26,49 @@ ReduceFrameCommand::ReduceFrameCommand(GifContentModel *helper,
     : QUndoCommand(parent), gif(helper), inter(interval) {
     oldinter = gif->delays();
 
-    for (auto &ind : indices) {
-        oldimgs.insert(ind, gif->image(ind));
+    bufferDir = std::make_unique<QTemporaryDir>();
+    if (!bufferDir->isValid()) {
+        bufferDir.reset();
+        return;
+    }
+
+    for (auto ind : indices) {
+        if (ind < 0 || ind >= gif->frameCount()) {
+            continue;
+        }
+        const auto path = bufferDir->path() + QDir::separator() +
+                          QStringLiteral("reduce_%1.png").arg(ind, 6, 10, QLatin1Char('0'));
+        gif->image(ind).save(path, "PNG");
+        oldimgFiles.insert(ind, path);
     }
 }
 
 void ReduceFrameCommand::undo() {
-    for (auto p = oldimgs.constKeyValueBegin(); p != oldimgs.constKeyValueEnd();
-         p++) {
-        gif->insertFrame(p->second, 1, p->first); // real time will be set later
+    for (auto p = oldimgFiles.constKeyValueBegin(); p != oldimgFiles.constKeyValueEnd();
+         ++p) {
+        QImage img;
+        img.load(p->second);
+        if (!img.isNull()) {
+            gif->insertFrame(img, 1, p->first); // delay restored below
+        }
     }
 
-    auto len = oldinter.count();
-    for (auto i = 0; i < len; i++) {
+    const auto len = qMin(oldinter.count(), static_cast<int>(gif->frameCount()));
+    for (int i = 0; i < len; ++i) {
         gif->setFrameDelay(i, oldinter.at(i));
     }
 }
 
 void ReduceFrameCommand::redo() {
-    QMapIterator<int, QImage> it(oldimgs);
+    QMapIterator<int, QString> it(oldimgFiles);
     it.toBack();
     while (it.hasPrevious()) {
         it.previous();
         gif->removeFrames(it.key());
     }
 
-    auto len = inter.count();
-    for (auto i = 0; i < len; i++) {
+    const auto len = qMin(inter.count(), static_cast<int>(gif->frameCount()));
+    for (int i = 0; i < len; ++i) {
         gif->setFrameDelay(i, inter.at(i));
     }
 }

@@ -26,6 +26,7 @@
 #include <QString>
 
 #include <memory>
+#include <functional>
 
 class GifWriter : public QObject {
     Q_OBJECT
@@ -315,6 +316,10 @@ public:
     QImage image(qsizetype index) const;
 
     bool save(const QString &filename = QString(), unsigned int loopCount = 0);
+
+    bool saveLazy(const QString &filename, unsigned int loopCount,
+                  qsizetype frameCount, const QVector<int> &delays,
+                  const std::function<QImage(qsizetype)> &frameProvider);
 
     void clear();
 

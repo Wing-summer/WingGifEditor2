@@ -21,8 +21,10 @@
 #include "gifreader.h"
 
 #include <QAbstractListModel>
+#include <QCache>
 #include <QListView>
 #include <QStyledItemDelegate>
+#include <QTemporaryDir>
 
 #include "control/gifeditor.h"
 #include "utilities.h"
@@ -106,6 +108,11 @@ private:
     void insertFrames(const QVector<QImage> &images, const QVector<int> &delays,
                       int index, bool processed);
 
+    bool ensureStoreDir();
+    QString framePathForIndex(qsizetype index) const;
+    void persistFrame(qsizetype index, const QImage &image);
+    QImage loadFrame(qsizetype index) const;
+
     template <typename T>
     void moveRange(QVector<T> &data, qsizetype pos, qsizetype dest,
                    qsizetype count = -1) {
@@ -123,7 +130,10 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
 
 private:
-    QVector<QImage> _data;
+    QSize _frameSize;
+    QVector<QString> _frameFiles;
+    mutable QCache<qsizetype, QImage> _frameCache;
+    std::unique_ptr<QTemporaryDir> _storeDir;
     QVector<int> _delays;
 
     QListView *_view = nullptr;

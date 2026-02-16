@@ -12,8 +12,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
 
 add_definitions(-DWINGGIF_VERSION="${PROJECT_VERSION}"
                 -DAPP_ORG="WingCloudStudio" -DAPP_NAME="${PROJECT_NAME}")
@@ -234,11 +234,11 @@ target_include_directories(
 
 if(WINGGIF_USE_FRAMELESS)
     target_link_libraries(
-        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets gif_object_lib
+        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Concurrent gif_object_lib
                                QWKCore QWKWidgets OpenMP::OpenMP_CXX)
 else()
     target_link_libraries(
-        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets gif_object_lib
+        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Concurrent gif_object_lib
                                OpenMP::OpenMP_CXX)
 endif()
 
