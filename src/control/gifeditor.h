@@ -26,10 +26,15 @@
 class GifEditor : public QGraphicsView {
     Q_OBJECT
 public:
+    enum class DrawTool { None, Rectangle, Ellipse };
+
     GifEditor(const QImage &img, QWidget *parent = nullptr);
     void setImage(const QImage &img);
 
     QRectF selRect() const;
+
+    DrawTool drawTool() const;
+
 
 public slots:
     void setSelRect(int x, int y, int w, int h);
@@ -38,6 +43,8 @@ public slots:
     void fitInEditorView();
 
     void setCropMode(bool b);
+
+    void setDrawTool(DrawTool tool);
 
     void zoomIn();
     void zoomOut();
@@ -58,6 +65,9 @@ private:
     QRubberBand *rubber;
 
     QPoint tmppos;
+    QPointF drawStartPos;
+    QGraphicsItem *activeShape = nullptr;
+    DrawTool activeTool = DrawTool::None;
     bool iscut = true;
 };
 

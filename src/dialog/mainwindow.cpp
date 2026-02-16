@@ -17,6 +17,8 @@
 
 #include "mainwindow.h"
 
+#include <QtConcurrent>
+
 #include <QDesktopServices>
 #include <QSplitter>
 #include <QStatusBar>
@@ -1162,8 +1164,9 @@ bool MainWindow::writeGif(const QString &gif, unsigned int loopCount,
 
     WaitingLoop dw(tr("WritingGif"));
     writer.setExtString(comment);
-    writer.pushRange(_model->images(), _model->delays());
-    auto ret = writer.save(gif, loopCount);
+    auto ret = writer.saveLazy(
+        gif, loopCount, _model->frameCount(), _model->delays(),
+        [this](qsizetype i) { return _model->image(i); });
     if (ret) {
         _comment = comment;
     }
@@ -1183,11 +1186,15 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
     {
         WaitingLoop dw(tr("ExportingGif"));
 
-#pragma omp parallel for
+        QVector<int> indices;
+        indices.reserve(_model->frameCount());
         for (int i = 0; i < _model->frameCount(); ++i) {
-            _model->image(i).save(dir.absoluteFilePath(QString::number(i)),
-                                  ext);
+            indices.append(i);
         }
+
+        QtConcurrent::blockingMap(indices, [this, &dir, ext](int i) {
+            _model->image(i).save(dir.absoluteFilePath(QString::number(i)), ext);
+        });
     }
 
     return true;

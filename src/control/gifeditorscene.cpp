@@ -22,6 +22,7 @@
 #include <QAtomicInt>
 #include <QColor>
 #include <QHash>
+#include <QPainter>
 
 size_t qHash(const QColor &color, size_t seed = 0) noexcept {
     return qHash(qMakePair(color.rgba(), color.spec()), seed);
@@ -69,6 +70,20 @@ QRectF GifEditorScene::contentBounding() const { return gw->boundingRect(); }
 QSize GifEditorScene::frameImageSize() const { return sel->imageSize(); }
 
 QRectF GifEditorScene::selRect() const { return sel->selRect(); }
+
+QImage GifEditorScene::renderedImage() const {
+    auto imageSize = frameImageSize();
+    if (imageSize.isEmpty()) {
+        return {};
+    }
+
+    QImage rendered(imageSize, QImage::Format_ARGB32);
+    rendered.fill(Qt::transparent);
+
+    QPainter painter(&rendered);
+    this->render(&painter);
+    return rendered;
+}
 
 void GifEditorScene::setSelRect(int x, int y, int w, int h) {
     sel->setSelRect(x, y, w, h);
