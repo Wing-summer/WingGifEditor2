@@ -24,15 +24,25 @@ InsertFrameCommand::InsertFrameCommand(GifContentModel *model, int index,
 
 void InsertFrameCommand::undo() {
     gif->removeFrames(oldindex, oldimgs.size());
-    auto lv = gif->linkedListView();
-    lv->clearSelection();
-    lv->setCurrentIndex(gif->index(oldindex));
+    if (auto lv = gif->linkedListView()) {
+        lv->clearSelection();
+        if (gif->frameCount() > 0) {
+            const auto target = qBound(0, oldindex,
+                                       static_cast<int>(gif->frameCount() - 1));
+            lv->setCurrentIndex(gif->index(target));
+        }
+    }
 }
 
 void InsertFrameCommand::redo() {
     gif->insertFrames(oldimgs, oldindex);
 
-    auto lv = gif->linkedListView();
-    lv->clearSelection();
-    lv->setCurrentIndex(gif->index(oldindex));
+    if (auto lv = gif->linkedListView()) {
+        lv->clearSelection();
+        if (gif->frameCount() > 0) {
+            const auto target = qBound(0, oldindex,
+                                       static_cast<int>(gif->frameCount() - 1));
+            lv->setCurrentIndex(gif->index(target));
+        }
+    }
 }

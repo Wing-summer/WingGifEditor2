@@ -24,13 +24,17 @@ FlipFrameCommand::FlipFrameCommand(GifContentModel *helper, Qt::Orientation dir,
 void FlipFrameCommand::undo() {
     gif->flipFrames(olddir, 0);
     // force update
-    auto i = gif->linkedListView()->currentIndex();
-    emit gif->linkedListView()->selectionModel()->currentRowChanged(i, i);
+    if (auto lv = gif->linkedListView(); lv && lv->selectionModel()) {
+        auto i = lv->currentIndex();
+        emit lv->selectionModel()->currentRowChanged(i, i);
+    }
 }
 
 void FlipFrameCommand::redo() {
     gif->flipFrames(olddir, 0);
     // force update
-    auto i = gif->linkedListView()->currentIndex();
-    emit gif->linkedListView()->selectionModel()->currentRowChanged(i, i);
+    if (auto lv = gif->linkedListView(); lv && lv->selectionModel()) {
+        auto i = lv->currentIndex();
+        emit lv->selectionModel()->currentRowChanged(i, i);
+    }
 }

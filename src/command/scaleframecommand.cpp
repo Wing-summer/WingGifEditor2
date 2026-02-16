@@ -17,12 +17,51 @@
 
 #include "scaleframecommand.h"
 
+#include <QDir>
+#include <utility>
+
 ScaleFrameCommand::ScaleFrameCommand(GifContentModel *helper, int w, int h,
                                      QUndoCommand *parent)
     : QUndoCommand(parent), gif(helper), _w(w), _h(h) {
-    buffer = helper->images();
+    bufferDir = std::make_unique<QTemporaryDir>();
+    if (!bufferDir->isValid()) {
+        bufferDir.reset();
+        return;
+    }
+
+    const auto count = helper->frameCount();
+    bufferFiles.reserve(count);
+    for (qsizetype i = 0; i < count; ++i) {
+        const auto path = bufferDir->path() + QDir::separator() +
+                          QStringLiteral("scale_%1.png").arg(i, 6, 10, QLatin1Char('0'));
+        helper->image(i).save(path, "PNG");
+        bufferFiles.push_back(path);
+    }
 }
 
-void ScaleFrameCommand::undo() { gif->swapFrames(buffer); }
+void ScaleFrameCommand::undo() {
+    if (!gif || bufferFiles.isEmpty()) {
+        return;
+    }
 
-void ScaleFrameCommand::redo() { gif->scaleFrames(_w, _h); }
+    QVector<QImage> frames;
+    frames.reserve(bufferFiles.size());
+    for (const auto &path : std::as_const(bufferFiles)) {
+        QImage img;
+        img.load(path);
+        if (!img.isNull()) {
+            frames.push_back(img);
+        }
+    }
+
+    if (frames.size() == gif->frameCount()) {
+        gif->swapFrames(frames);
+    }
+}
+
+void ScaleFrameCommand::redo() {
+    if (!gif) {
+        return;
+    }
+    gif->scaleFrames(_w, _h);
+}

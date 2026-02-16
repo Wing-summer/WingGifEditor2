@@ -23,10 +23,14 @@ RotateFrameCommand::RotateFrameCommand(GifContentModel *helper,
 
 void RotateFrameCommand::undo() {
     gif->rotateFrames(!clockwise);
-    gif->linkedGifEditor()->fitOpenSize();
+    if (auto editor = gif->linkedGifEditor()) {
+        editor->fitOpenSize();
+    }
 }
 
 void RotateFrameCommand::redo() {
     gif->rotateFrames(clockwise);
-    gif->linkedGifEditor()->fitOpenSize();
+    if (auto editor = gif->linkedGifEditor()) {
+        editor->fitOpenSize();
+    }
 }

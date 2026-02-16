@@ -22,6 +22,9 @@
 #include <QListWidget>
 #include <QUndoCommand>
 
+#include <QTemporaryDir>
+#include <memory>
+
 enum class DelDirection { Before, After };
 
 class DelFrameDirCommand : public QUndoCommand {
@@ -36,7 +39,8 @@ private:
     int oldindex;
     DelDirection olddir;
 
-    QVector<QImage> oldimgs;
+    std::unique_ptr<QTemporaryDir> bufferDir;
+    QVector<QString> oldimgFiles;
     QVector<int> olddelays;
 };
 

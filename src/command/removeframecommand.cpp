@@ -25,6 +25,9 @@ RemoveFrameCommand::RemoveFrameCommand(GifContentModel *helper,
     std::sort(indices.begin(), indices.end(), std::greater<int>());
 
     for (auto i : indices) {
+        if (i < 0 || i >= gif->frameCount()) {
+            continue;
+        }
         GifData d;
         d.delay = gif->delay(i);
         d.image = gif->image(i);
@@ -33,21 +36,33 @@ RemoveFrameCommand::RemoveFrameCommand(GifContentModel *helper,
 }
 
 void RemoveFrameCommand::undo() {
-    for (int i = 0; i < indices.size(); ++i) {
+    for (int i = 0; i < indices.size() && i < imgs.size(); ++i) {
         gif->insertFrame(imgs.at(i), indices.at(i));
     }
 
-    auto l = indices.last();
-    gif->linkedListView()->setCurrentIndex(gif->index(l));
+    if (auto lv = gif->linkedListView(); lv && !indices.isEmpty()) {
+        const auto target = qBound(0, indices.last(), static_cast<int>(gif->frameCount() - 1));
+        if (target >= 0) {
+            lv->setCurrentIndex(gif->index(target));
+        }
+    }
 }
 
 void RemoveFrameCommand::redo() {
-    for (auto p = indices.rbegin(); p < indices.rend(); p++)
-        gif->removeFrames(*p);
+    for (auto p = indices.rbegin(); p < indices.rend(); ++p) {
+        if (*p >= 0 && *p < gif->frameCount()) {
+            gif->removeFrames(*p);
+        }
+    }
 
-    auto l = indices.last();
-    auto c = gif->frameCount();
-    if (l > c)
-        l = c;
-    gif->linkedListView()->setCurrentIndex(gif->index(l));
+    if (auto lv = gif->linkedListView(); lv && !indices.isEmpty()) {
+        auto l = indices.last();
+        const auto c = static_cast<int>(gif->frameCount());
+        if (c > 0) {
+            if (l >= c) {
+                l = c - 1;
+            }
+            lv->setCurrentIndex(gif->index(l));
+        }
+    }
 }
