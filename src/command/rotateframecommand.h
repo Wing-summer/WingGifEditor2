@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,20 +18,20 @@
 #ifndef ROTATEFRAMECOMMAND_H
 #define ROTATEFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QUndoCommand>
+#include "undocommand.h"
 
-class RotateFrameCommand : public QUndoCommand {
+class RotateFrameCommand : public UndoCommand {
 public:
-    RotateFrameCommand(GifContentModel *helper, bool isclockwise,
-                       QUndoCommand *parent = nullptr);
+    explicit RotateFrameCommand(GifContentModel *model, bool isclockwise,
+                                QUndoCommand *parent = nullptr);
 
+public:
     void undo() override;
     void redo() override;
 
 private:
-    GifContentModel *gif;
     bool clockwise;
+    GifContentModel::Result _cached;
 };
 
 #endif // ROTATEFRAMECOMMAND_H

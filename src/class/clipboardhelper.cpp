@@ -16,65 +16,77 @@
 */
 
 #include "clipboardhelper.h"
+#include "class/gifframe.h"
+
 #include <QApplication>
 #include <QBuffer>
 #include <QClipboard>
+#include <QDataStream>
 #include <QMimeData>
-#include <QPainter>
+#include <QTemporaryFile>
 
-void ClipBoardHelper::setImageFrames(const QVector<GifData> &frames) {
+bool ClipBoardHelper::setImageFrames(
+    const QVector<QSharedPointer<GifFrame>> &frames) {
     auto clipboard = qApp->clipboard();
+    qsizetype total = frames.count();
     QByteArray buffer;
-    auto len = frames.count();
-    buffer.append(APP_NAME, strlen(APP_NAME));
-    buffer.append(reinterpret_cast<const char *>(&len), sizeof(int));
-    for (auto &frame : frames) {
-        QByteArray img;
-        QBuffer bu(&img);
+    if (total > 0) {
+        QBuffer bu(&buffer);
         auto b = bu.open(QBuffer::WriteOnly);
         Q_ASSERT(b);
-        frame.image.save(&bu, "PNG");
-        len = img.size();
-        buffer.append(reinterpret_cast<const char *>(&len), sizeof(int));
-        buffer.append(img);
-        buffer.append(reinterpret_cast<const char *>(&frame.delay),
-                      sizeof(int));
+        QDataStream s(&bu);
+        s << QString::fromLatin1(APP_NAME) << total;
+
+        for (auto &frame : frames) {
+            s << frame->delay() << frame->image();
+            if (buffer.size() > ClipboardMemLimit) {
+                return false;
+            }
+        }
     }
 
     QMimeData *mimeData = new QMimeData;
     mimeData->setData("application/octet-stream", buffer);
     clipboard->setMimeData(mimeData);
+    return true;
 }
 
-void ClipBoardHelper::getImageFrames(QVector<GifData> &frames) {
+void ClipBoardHelper::getImageFrames(
+    QVector<QSharedPointer<GifFrame>> &frames) {
+
     frames.clear();
     auto clipboard = qApp->clipboard();
     auto buffer = clipboard->mimeData()->data("application/octet-stream");
-    if (!buffer.isEmpty() && buffer.startsWith(APP_NAME)) {
-        auto pb = buffer.data() + strlen(APP_NAME);
-        auto epb = pb + buffer.size();
-        int count = *reinterpret_cast<int *>(pb);
-        if (count < 0)
-            return;
-        pb += sizeof(int);
-        for (auto i = 0; i < count && pb < epb; i++) {
-            auto imgbytes = *reinterpret_cast<int *>(pb);
-            pb += sizeof(int);
-            QImage img;
-            if (img.loadFromData(reinterpret_cast<const uchar *>(pb),
-                                 imgbytes)) {
-                GifData d;
-                QImage im(img.size(), QImage::Format_RGBA8888);
-                QPainter p(&im);
-                p.drawImage(QPoint(), img);
-                d.image.swap(im);
-                pb += imgbytes;
-                d.delay = *reinterpret_cast<int *>(pb);
-                pb += sizeof(int);
-                frames.append(d);
-            } else {
-                pb += (ulong(imgbytes) + sizeof(int));
-            }
+    QBuffer bu(&buffer);
+    auto b = bu.open(QBuffer::ReadOnly);
+    Q_ASSERT(b);
+    QDataStream s(&bu);
+
+    QString sig;
+    s >> sig;
+    if (sig != APP_NAME) {
+        return;
+    }
+
+    qsizetype total;
+    s >> total;
+    for (qsizetype i = 0; i < total; ++i) {
+        int delay;
+        QImage image;
+        s >> delay >> image;
+
+        QTemporaryFile tfile(QStringLiteral("frame_XXXXXX.png"));
+        tfile.setAutoRemove(false);
+        if (!tfile.open()) {
+            continue;
         }
+
+        auto img =
+            QSharedPointer<GifFrame>::create(image, delay, tfile.fileName());
+        if (!img->isValidFrame()) {
+            continue;
+        }
+
+        frames.append(img);
     }
 }

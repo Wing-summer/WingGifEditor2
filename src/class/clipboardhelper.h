@@ -21,13 +21,16 @@
 #include <QImage>
 #include <QObject>
 
-#include "utilities.h"
+class GifFrame;
 
 class ClipBoardHelper : public QObject {
     Q_OBJECT
 public:
-    static void setImageFrames(const QVector<GifData> &frames);
-    static void getImageFrames(QVector<GifData> &frames);
+    static bool setImageFrames(const QVector<QSharedPointer<GifFrame>> &frames);
+    static void getImageFrames(QVector<QSharedPointer<GifFrame>> &frames);
+
+private:
+    inline static qsizetype ClipboardMemLimit = 2 * 1024 * 1024; // 2MB
 };
 
 #endif // CLIPBOARDHELPER_H

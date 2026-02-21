@@ -81,7 +81,7 @@ QImage GifEditorScene::renderedImage() const {
     rendered.fill(Qt::transparent);
 
     QPainter painter(&rendered);
-    this->render(&painter);
+    const_cast<GifEditorScene *>(this)->render(&painter);
     return rendered;
 }
 
@@ -99,7 +99,7 @@ QColor GifEditorScene::getContrastingColor(const QColor &color) {
 }
 
 QColor GifEditorScene::getMainThemeColor(const QImage &image) {
-    QHash<QColor, QAtomicInt> colorCount;
+    QHash<QColor, quint64> colorCount;
 
     // Reduce the image size to speed up the process
     QImage scaledImage = image.scaled(50, 50);

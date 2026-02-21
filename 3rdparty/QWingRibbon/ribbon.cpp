@@ -29,6 +29,12 @@ Ribbon::Ribbon(QWidget *parent) : QTabWidget(parent) {
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     setAcceptDrops(true);
 
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 0)
+    setStyleSheet("QToolButton::down-arrow { width:10px; height:10px; "
+                  "subcontrol-position:right center; "
+                  "subcontrol-origin:content; left: -2px;}");
+#endif
+
     auto hideBtn = new QToolButton(this);
     hideBtn->setObjectName(QStringLiteral("RIBBON_HIDE_BTN"));
     hideBtn->setCheckable(true);
@@ -44,7 +50,7 @@ Ribbon::Ribbon(QWidget *parent) : QTabWidget(parent) {
         Q_ASSERT(tab_pane);
         tab_pane->setVisible(!checked);
         if (checked) {
-            this->setMaximumHeight(this->tabBar()->height());
+            this->setMaximumHeight(this->tabBar()->height() + 1);
         } else {
             this->setMaximumHeight(QWIDGETSIZE_MAX);
         }
@@ -58,6 +64,12 @@ RibbonTabContent *Ribbon::addTab(const QString &tabName) {
     RibbonTabContent *ribbonTabContent = new RibbonTabContent;
     QTabWidget::addTab(ribbonTabContent, tabName);
     return ribbonTabContent;
+}
+
+void Ribbon::addTab(RibbonTabContent *tabContent, const QString &tabName) {
+    if (tabContent) {
+        QTabWidget::addTab(tabContent, tabName);
+    }
 }
 
 RibbonTabContent *Ribbon::addTab(const QIcon &tabIcon, const QString &tabName) {
@@ -119,7 +131,7 @@ void Ribbon::dropEvent(QDropEvent *event) {
             pathList.append(urlList.at(i).toLocalFile());
         }
 
-        emit onDragDropFiles(pathList);
+        Q_EMIT onDragDropFiles(pathList);
         event->acceptProposedAction();
     }
 }

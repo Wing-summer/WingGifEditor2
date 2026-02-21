@@ -27,17 +27,21 @@
 #include <QWidget>
 
 Q_DECL_UNUSED static inline QString NAMEICONRES(const QString &name) {
-    return ":/com.wingsummer.winggif/images/" + name + ".png";
+    return QStringLiteral(":/com.wingsummer.winggif/images/") + name +
+           QStringLiteral(".png");
 }
 
 Q_DECL_UNUSED static inline QIcon ICONRES(const QString &name) {
-    return QIcon(NAMEICONRES(name));
+    static QHash<QString, QIcon> cache;
+    auto picon = cache.find(name);
+    if (picon == cache.end()) {
+        QIcon icon(NAMEICONRES(name));
+        cache.insert(name, icon);
+        return icon;
+    } else {
+        return *picon;
+    }
 }
-
-struct GifData {
-    int delay;
-    QImage image;
-};
 
 class Utilities {
 public:
@@ -56,12 +60,6 @@ public:
         }
 
         return QStringLiteral("%1 TB").arg(av);
-    }
-
-    static bool checkIsLittleEndian() {
-        short s = 0x1122;
-        auto l = *reinterpret_cast<char *>(&s);
-        return l == 0x22;
     }
 
     static bool fileCanWrite(QString path) {

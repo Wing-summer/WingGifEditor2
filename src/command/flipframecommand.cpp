@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,12 +17,25 @@
 
 #include "flipframecommand.h"
 
-FlipFrameCommand::FlipFrameCommand(GifContentModel *helper, Qt::Orientation dir,
-                                   QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper), olddir(dir) {}
+FlipFrameCommand::FlipFrameCommand(GifContentModel *model,
+                                   const QVector<int> &indices,
+                                   Qt::Orientation dir, QUndoCommand *parent)
+    : UndoCommand(model, parent), _dir(dir) {
+    if (indices.isEmpty()) {
+        setObsolete(true);
+    }
+    for (auto &index : indices) {
+        _oldcache.insert(index, model->frame(index));
+    }
+}
 
 void FlipFrameCommand::undo() {
-    gif->flipFrames(olddir, 0);
+    auto gif = model();
+
+    for (auto &&[index, frame] : _oldcache.asKeyValueRange()) {
+        gif->replaceFrame(index, frame);
+    }
+
     // force update
     if (auto lv = gif->linkedListView(); lv && lv->selectionModel()) {
         auto i = lv->currentIndex();
@@ -31,7 +44,16 @@ void FlipFrameCommand::undo() {
 }
 
 void FlipFrameCommand::redo() {
-    gif->flipFrames(olddir, 0);
+    auto gif = model();
+
+    if (_newcache.isEmpty()) {
+        _newcache = gif->flipFrames(_oldcache.keys(), _dir);
+    } else {
+        for (auto &&[index, frame] : _newcache.asKeyValueRange()) {
+            gif->replaceFrame(index, frame);
+        }
+    }
+
     // force update
     if (auto lv = gif->linkedListView(); lv && lv->selectionModel()) {
         auto i = lv->currentIndex();

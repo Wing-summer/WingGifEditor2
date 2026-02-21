@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,30 +18,24 @@
 #ifndef DELFRAMEDIRCOMMAND_H
 #define DELFRAMEDIRCOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QListWidget>
-#include <QUndoCommand>
-
-#include <QTemporaryDir>
-#include <memory>
+#include "undocommand.h"
 
 enum class DelDirection { Before, After };
 
-class DelFrameDirCommand : public QUndoCommand {
+class DelFrameDirCommand : public UndoCommand {
 public:
-    DelFrameDirCommand(GifContentModel *helper, int index, DelDirection dir,
-                       QUndoCommand *parent = nullptr);
+    explicit DelFrameDirCommand(GifContentModel *model, int index,
+                                DelDirection dir,
+                                QUndoCommand *parent = nullptr);
+
+public:
     void undo() override;
     void redo() override;
 
 private:
-    GifContentModel *gif;
-    int oldindex;
-    DelDirection olddir;
-
-    std::unique_ptr<QTemporaryDir> bufferDir;
-    QVector<QString> oldimgFiles;
-    QVector<int> olddelays;
+    int _oldindex;
+    DelDirection _olddir;
+    QVector<QSharedPointer<GifFrame>> _data;
 };
 
 #endif // DELFRAMEDIRCOMMAND_H

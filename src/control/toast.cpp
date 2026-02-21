@@ -27,8 +27,6 @@
 #include <QTimerEvent>
 #include <QWindow>
 
-#include "../class/eventfilter.h"
-
 int Toast::LENGTH_LONG = 4000;
 int Toast::LENGTH_SHORT = 1500;
 static const int TIMER_INTERVAL = 50;
@@ -45,8 +43,8 @@ Toast::Toast(const QString &strContent, const QPixmap &icon, int nToastInterval,
 }
 
 void Toast::toast(QWidget *parent, const QPixmap &icon,
-                  const QString &strContent, int fontPointSize,
-                  int nToastInterval) {
+                  const QString &strContent, int nToastInterval) {
+    Q_ASSERT(parent);
     static Toast *toast = nullptr;
 
     if (toast) {
@@ -55,86 +53,64 @@ void Toast::toast(QWidget *parent, const QPixmap &icon,
         toast->deleteLater();
     }
 
-    toast = new Toast(strContent, icon, nToastInterval, parent);
-    toast->m_drawFont.setPointSize(fontPointSize);
-
-    connect(toast, &Toast::destroyed, [&] { toast = nullptr; });
-
-    auto e0 = new EventFilter(QEvent::Move, toast);
-    auto e1 = new EventFilter(QEvent::Resize, toast);
-
-    auto callback = [](QObject *, QEvent *) {
-        if (toast) {
-            toast->setToastPos(toast->lastToastPos());
-        }
-    };
-    connect(e0, &EventFilter::eventTriggered, toast, callback);
-    connect(e1, &EventFilter::eventTriggered, toast, callback);
-
-    parent->installEventFilter(e0);
-    parent->installEventFilter(e1);
+    static QRegularExpression regex(QStringLiteral("\r\n|\n"));
+    auto str = strContent;
+    str.remove(regex);
+    toast = new Toast(str, icon, nToastInterval, parent);
+    connect(toast, &Toast::destroyed, toast, [&] { toast = nullptr; });
 
     toast->show();
 }
 
 Toast::~Toast() {}
 
-void Toast::setTextFont(const QFont &font) { m_drawFont = font; }
-
-const QFont &Toast::textFont() { return m_drawFont; }
-
-void Toast::setFontPointSize(int fontSize) {
-    m_drawFont.setPointSize(fontSize);
-    setToastPos(m_pos);
-}
-
-int Toast::fontPointSize() const { return m_drawFont.pointSize(); }
-
 QSize Toast::calculateTextSize() {
-    QFontMetrics metrice(m_drawFont);
-    QStringList ls = m_strContent.split(QRegularExpression("\r\n|\n"));
-    int nWidthInPixel = 0;
-    for (int i = 0; i < ls.size(); i++) {
-        int tmpWidth = metrice.horizontalAdvance(ls.at(i));
-        nWidthInPixel = tmpWidth > nWidthInPixel ? tmpWidth : nWidthInPixel;
-    }
-    int nHeightInPixel = metrice.height() * ls.length();
+    QFontMetrics metrice(displayFont());
+    int nWidthInPixel = metrice.horizontalAdvance(m_strContent);
+    int nHeightInPixel = metrice.height();
     return QSize(nWidthInPixel, nHeightInPixel);
 }
 
 void Toast::init() {
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint |
-                   Qt::WindowSystemMenuHint | Qt::BypassWindowManagerHint);
-    setAttribute(Qt::WA_TranslucentBackground);
+    setWindowFlags(Qt::Popup);
     setAttribute(Qt::WA_ShowWithoutActivating);
-
-    m_drawFont.setPointSize(20);
     setToastPos(TOAST_POS::BOTTOM);
+    auto w = _parent->width();
+    constexpr auto PADDING = 100;
+    setMaximumWidth(qMax(PADDING, w - PADDING));
 }
 
 void Toast::setToastPos(TOAST_POS pos) {
     Q_ASSERT(_parent);
     QRect screenRect = _parent->geometry();
     QSize fontsize = calculateTextSize();
-    QSizeF windowSize((fontsize.width() + m_drawFont.pointSize() + 5) +
-                          PADDING * 2,
-                      fontsize.height() + PADDING * 2);
-    auto windowsX =
-        screenRect.left() + (screenRect.width() - windowSize.width()) / 2;
+
+    auto font = this->displayFont();
+    auto metric = QFontMetricsF(font);
+    auto ICON_PADDING = metric.height() + metric.horizontalAdvance(' ');
+
+    QSizeF windowSize;
+    if (m_icon.isNull()) {
+        windowSize = QSizeF(fontsize.width() + PADDING * 2 + 1,
+                            fontsize.height() + PADDING * 2);
+    } else {
+        windowSize = QSizeF((fontsize.width() + ICON_PADDING) + PADDING * 2 + 1,
+                            fontsize.height() + PADDING * 2);
+    }
+    auto windowsX = (screenRect.width() - windowSize.width()) / 2;
     auto windowsY = 0.0;
     if (pos == TOAST_POS::TOP) {
-        windowsY = screenRect.top() + screenRect.height() / 6;
+        windowsY = screenRect.height() / 6;
     } else if (pos == TOAST_POS::BOTTOM) {
-        windowsY = screenRect.top() + screenRect.height() * 4 / 5;
+        windowsY = screenRect.height() * 5 / 6;
     } else {
-        windowsY =
-            screenRect.top() + (screenRect.height() - windowSize.height()) / 2;
+        windowsY = (screenRect.height() - windowSize.height()) / 2;
     }
 
     m_pos = pos;
 
-    setGeometry(int(windowsX), int(windowsY), int(windowSize.width()),
-                int(windowSize.height()));
+    setGeometry(qRound(windowsX), qRound(windowsY), qCeil(windowSize.width()),
+                qCeil(windowSize.height()));
 }
 
 Toast::TOAST_POS Toast::lastToastPos() const { return m_pos; }
@@ -146,35 +122,35 @@ void Toast::paintEvent(QPaintEvent *) {
 
     QSize widgetSize = size();
 
-    painter.setFont(m_drawFont);
-
     QPen textPen(Qt::PenStyle::SolidLine);
-
     textPen.setColor(m_textColor);
     textPen.setJoinStyle(Qt::PenJoinStyle::RoundJoin);
+    painter.fillRect(this->rect(), m_backColor);
 
-    QPen emptyPen(Qt::PenStyle::NoPen);
-
-    painter.setPen(emptyPen);
-    painter.setBrush(m_backColor);
-    painter.drawRoundedRect(0, 0, widgetSize.width(), widgetSize.height(), 10,
-                            10);
-
-    auto ICON_SIZE = m_drawFont.pointSize();
-    auto ICON_PADDING = ICON_SIZE + 5;
+    auto font = this->displayFont();
+    painter.setFont(font);
+    auto metric = QFontMetricsF(font);
+    auto ICON_SIZE = metric.height();
+    auto ICON_PADDING = metric.horizontalAdvance(' ');
     if (m_icon.isNull()) {
         painter.setPen(textPen);
-        painter.drawText(PADDING + ICON_PADDING / 2,
-                         widgetSize.height() / 2 + PADDING, m_strContent);
+        QRectF rect(PADDING, PADDING, widgetSize.width() - PADDING - PADDING,
+                    widgetSize.height() - PADDING - PADDING);
+        painter.drawText(rect, metric.elidedText(m_strContent,
+                                                 Qt::TextElideMode::ElideRight,
+                                                 rect.width()));
     } else {
-        painter.drawPixmap(QRect(PADDING,
-                                 int(widgetSize.height() - ICON_SIZE) / 2,
-                                 ICON_SIZE, ICON_SIZE),
-                           m_icon);
+        painter.drawPixmap(QRectF(PADDING, PADDING, ICON_SIZE, ICON_SIZE),
+                           m_icon, {});
 
         painter.setPen(textPen);
-        painter.drawText(PADDING + ICON_PADDING,
-                         widgetSize.height() / 2 + PADDING, m_strContent);
+        QRectF rect(PADDING + ICON_SIZE + ICON_PADDING, PADDING,
+                    widgetSize.width() - PADDING - PADDING - ICON_SIZE -
+                        ICON_PADDING,
+                    widgetSize.height() - PADDING - PADDING);
+        painter.drawText(rect, metric.elidedText(m_strContent,
+                                                 Qt::TextElideMode::ElideRight,
+                                                 rect.width()));
     }
 }
 
@@ -218,6 +194,12 @@ void Toast::timerEvent(QTimerEvent *e) {
 QColor Toast::textColor() const { return m_textColor; }
 
 void Toast::setTextColor(const QColor &textColor) { m_textColor = textColor; }
+
+QFont Toast::displayFont() const {
+    auto font = this->font();
+    font.setPointSizeF(font.pointSizeF() * 1.8);
+    return font;
+}
 
 QColor Toast::backColor() const { return m_backColor; }
 

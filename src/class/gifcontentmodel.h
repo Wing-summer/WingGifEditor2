@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,7 +18,7 @@
 #ifndef GIFCONTENTMODEL_H
 #define GIFCONTENTMODEL_H
 
-#include "gifreader.h"
+#include "giffile.h"
 
 #include <QAbstractListModel>
 #include <QCache>
@@ -27,12 +27,22 @@
 #include <QTemporaryDir>
 
 #include "control/gifeditor.h"
-#include "utilities.h"
 
 class GifContentModel : public QAbstractListModel {
     Q_OBJECT
 public:
     enum class MoveFrameDirection { Left, Right };
+
+    struct Result {
+        using R = QPair<QSize, QVector<QSharedPointer<GifFrame>>>;
+
+        R olddata;
+        R newdata;
+
+        inline bool isValid() const {
+            return !olddata.first.isEmpty() && !newdata.first.isEmpty();
+        }
+    };
 
 public:
     explicit GifContentModel(QObject *parent = nullptr);
@@ -45,9 +55,13 @@ public:
 
     GifEditor *linkedGifEditor() const;
 
+    QSharedPointer<GifFrame> frame(qsizetype index) const;
+
     QImage image(qsizetype index) const;
 
     int delay(qsizetype index) const;
+
+    QString comment() const;
 
     int width() const;
 
@@ -55,74 +69,68 @@ public:
 
     QSize frameSize() const;
 
-    QVector<int> delays() const;
-
-    QVector<QImage> images() const;
-
     qsizetype frameCount() const;
 
-    static bool isValidGifFrame(const QImage &image, int delay);
-
-    static int delayLimitMin();
-
-    static int delayLimitMax();
-
-public slots:
-    void readGifReader(GifReader *reader);
-
-    bool insertFrame(const GifData &frame, int index);
-
-    bool insertFrame(const QImage &image, int delay, int index);
-
-    void insertFrames(const QVector<GifData> &frames, int index);
-
-    void insertFrames(const QVector<QImage> &images, const QVector<int> &delays,
-                      int index);
-
-    void removeFrames(int index, qsizetype count = 1);
-
-    void swapFrames(const QVector<QImage> &imgs);
-
-    void cropFrames(const QRect &rect);
-
-    void setFrameDelay(qsizetype index, int delay, qsizetype count = 1);
-
-    bool setFrameImage(qsizetype index, const QImage &img);
-
-    void scaleFrames(int width, int height);
-
-    void flipFrames(Qt::Orientation dir, int index, qsizetype count = 1);
-
-    void reverseFrames(qsizetype begin = 0, qsizetype end = -1);
-
-    void rotateFrames(bool clockwise);
-
-    void moveFrames(qsizetype index, MoveFrameDirection dir,
-                    qsizetype count = 1);
+public:
+    GifFile::ErrorCode readGifFile(const QString &gif);
 
     void clearData();
 
+public:
+    QSharedPointer<GifFrame> generateFrame(const QImage &image, int delay);
+
+    void insertFrame(qsizetype index, const QSharedPointer<GifFrame> &frame);
+
+    void insertFrames(qsizetype index,
+                      const QVector<QSharedPointer<GifFrame>> &frames);
+
+    QVector<QSharedPointer<GifFrame>> removeFrames(qsizetype index,
+                                                   qsizetype count);
+
+    QSharedPointer<GifFrame> removeFrame(qsizetype index);
+
+    QPair<QSize, QVector<QSharedPointer<GifFrame>>>
+    replaceFrames(const QSize &frameSize,
+                  const QVector<QSharedPointer<GifFrame>> &frames);
+
+    void replaceFrame(qsizetype index, const QSharedPointer<GifFrame> frame);
+
+    QMap<int, std::variant<QPair<int, int>, QSharedPointer<GifFrame>>>
+    reduceFrameDryRun(qsizetype begin, qsizetype end, qsizetype step);
+
+    void applyReduceFrame(
+        const QMap<int, std::variant<QPair<int, int>, QSharedPointer<GifFrame>>>
+            &data);
+
+    void undoReduceFrame(
+        const QMap<int, std::variant<QPair<int, int>, QSharedPointer<GifFrame>>>
+            &data);
+
+public:
+    Result cropFrames(const QRect &rect);
+
+    Result rotateFrames(bool clockwise);
+
+    QMap<int, QSharedPointer<GifFrame>> flipFrames(const QVector<int> &indices,
+                                                   Qt::Orientation dir);
+
+    Result scaleFrames(int width, int height);
+
+    void setFrameDelay(qsizetype index, int delay);
+
+    void reverseFrames(qsizetype begin, qsizetype end);
+
+    Result setFrameImage(qsizetype index, const QImage &img);
+
+public:
+    void moveFrames(qsizetype index, GifContentModel::MoveFrameDirection dir,
+                    qsizetype count = 1);
+
+signals:
+    void sigUpdateUIProcess();
+
 private:
     void updateLinkedListViewCurrent() const;
-
-    void insertFrames(const QVector<QImage> &images, const QVector<int> &delays,
-                      int index, bool processed);
-
-    bool ensureStoreDir();
-    QString framePathForIndex(qsizetype index) const;
-    void persistFrame(qsizetype index, const QImage &image);
-    QImage loadFrame(qsizetype index) const;
-
-    template <typename T>
-    void moveRange(QVector<T> &data, qsizetype pos, qsizetype dest,
-                   qsizetype count = -1) {
-        auto src = data.mid(pos, count);
-        data.remove(pos, count);
-        data.insert(dest, count, T());
-        for (int i = 0; i < count; ++i) {
-            data.replace(dest + i, src.at(i));
-        }
-    }
 
     // QAbstractItemModel interface
 public:
@@ -130,11 +138,7 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
 
 private:
-    QSize _frameSize;
-    QVector<QString> _frameFiles;
-    mutable QCache<qsizetype, QImage> _frameCache;
-    std::unique_ptr<QTemporaryDir> _storeDir;
-    QVector<int> _delays;
+    GifFile _file;
 
     QListView *_view = nullptr;
     GifEditor *_editor = nullptr;

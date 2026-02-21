@@ -15,20 +15,32 @@
 ** =============================================================================
 */
 
-#ifndef SETTING_H
-#define SETTING_H
+#ifndef SETTINGS_H
+#define SETTINGS_H
 
 #include <QApplication>
 #include <QSettings>
+#include <QString>
+
+inline QString getRealContent(const QString &value) { return value; }
+
+template <typename T>
+inline QString getRealContent(T &value) {
+    static_assert(std::is_same<QString &, decltype(*value)>());
+    return *value;
+}
 
 #define HANDLE_CONFIG                                                          \
+    Q_ASSERT(!QApplication::organizationName().isEmpty() &&                    \
+             !QApplication::applicationName().isEmpty());                      \
     QSettings set(QStringLiteral(APP_ORG), QStringLiteral(APP_NAME))
 
 #define CONFIG set
 
-#define WRITE_CONFIG(config, dvalue) set.setValue(config, dvalue)
+#define WRITE_CONFIG(config, dvalue)                                           \
+    set.setValue(getRealContent(config), dvalue);
 
-#define READ_CONFIG(config, dvalue) set.value(config, dvalue)
+#define READ_CONFIG(config, dvalue) set.value(getRealContent(config), dvalue)
 
 #define READ_CONFIG_SAFE(var, config, dvalue, func)                            \
     {                                                                          \
@@ -41,6 +53,9 @@
 
 #define READ_CONFIG_INT(var, config, dvalue)                                   \
     READ_CONFIG_SAFE(var, config, dvalue, toInt)
+
+#define READ_CONFIG_STRING(var, config, dvalue)                                \
+    var = READ_CONFIG(config, dvalue).toString()
 
 #define READ_CONFIG_BOOL(var, config, dvalue)                                  \
     var = READ_CONFIG(config, dvalue).toBool()
@@ -66,4 +81,4 @@
         }                                                                      \
     }
 
-#endif // SETTING_H
+#endif // SETTINGS_H

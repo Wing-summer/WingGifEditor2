@@ -19,65 +19,13 @@
 
 #include <QPainter>
 
-GifWriter::GifWriter(int width, int height, const QString &filename,
-                     QObject *parent)
-    : QObject(parent), m_width(width), m_height(height), m_filename(filename) {
-    Q_ASSERT(width > 0 && height > 0);
-}
+GifWriter::GifWriter(const QString &filename, QObject *parent)
+    : QObject(parent), m_filename(filename) {}
 
-void GifWriter::push(const QImage &img, int delay) {
-    m_data.append(
-        img.scaled(m_width, m_height, m_mode, Qt::SmoothTransformation));
-    m_delays.append(delay);
-}
-
-bool GifWriter::pushRange(const QVector<QImage> &imgs,
-                          const QVector<int> &delays) {
-    if (imgs.size() != delays.size()) {
-        return false;
-    }
-    for (auto &img : imgs) {
-        m_data.append(
-            img.scaled(m_width, m_height, m_mode, Qt::SmoothTransformation));
-    }
-    for (auto &delay : delays) {
-        m_delays.append(delay);
-    }
-    return true;
-}
-
-bool GifWriter::setDelay(qsizetype index, int delay) {
-    if (index < 0 || index >= m_delays.size()) {
-        return false;
-    }
-    m_delays[index] = delay;
-    return true;
-}
-
-bool GifWriter::setImage(qsizetype index, const QImage &img) {
-    if (index < 0 || index >= m_delays.size()) {
-        return false;
-    }
-    m_data[index] =
-        img.scaled(m_width, m_height, m_mode, Qt::SmoothTransformation);
-    return true;
-}
-
-int GifWriter::delay(qsizetype index) const { return m_delays.at(index); }
-
-QImage GifWriter::image(qsizetype index) const { return m_data.at(index); }
-
-bool GifWriter::save(const QString &filename, unsigned int loopCount) {
-    auto fn = filename.isEmpty() ? m_filename : filename;
-    return saveLazy(fn, loopCount, m_data.size(), m_delays,
-                    [this](qsizetype i) { return m_data.at(i); });
-}
-
-bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
-                         qsizetype frameCount, const QVector<int> &delays,
-                         const std::function<QImage(qsizetype)> &frameProvider) {
-    if (filename.isEmpty() || frameCount <= 0 || delays.size() != frameCount ||
-        !frameProvider) {
+bool GifWriter::save(
+    const QString &filename, unsigned int loopCount, qsizetype frameCount,
+    const std::function<QPair<int, QImage>(qsizetype)> &frameProvider) {
+    if (filename.isEmpty() || frameCount <= 0 || !frameProvider) {
         return false;
     }
 
@@ -86,7 +34,7 @@ bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
     if (handle) {
         EGifSetGifVersion(handle, true);
 
-        QImage key = frameProvider(0);
+        auto [delay, key] = frameProvider(0);
         if (key.isNull()) {
             return closeEHandleWithError(handle);
         }
@@ -119,12 +67,11 @@ bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
             return closeEHandleWithError(handle);
 
         if (!m_extString.isEmpty()) {
-            if (EGifPutComment(handle, m_extString.toLatin1().data()) ==
-                GIF_ERROR)
+            if (EGifPutComment(handle, m_extString.data()) == GIF_ERROR)
                 return closeEHandleWithError(handle);
         }
 
-        if (!addFrame(handle, key, key.rect(), delays.at(0), resources))
+        if (!addFrame(handle, key, key.rect(), delay, resources))
             return closeEHandleWithError(handle);
 
         emit sigUpdateUIProcess();
@@ -133,10 +80,10 @@ bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
 
         for (qsizetype i = 1; i < frameCount; ++i) {
             bool result = false;
-            auto frame = frameProvider(i);
+            auto [delay, frame] = frameProvider(i);
 
             std::tie(result, delta) =
-                addFrame(handle, key, frame, delays.at(i) + delta, resources);
+                addFrame(handle, key, frame, delay + delta, resources);
 
             if (!result)
                 return closeEHandleWithError(handle);
@@ -152,19 +99,13 @@ bool GifWriter::saveLazy(const QString &filename, unsigned int loopCount,
     return false;
 }
 
-void GifWriter::clear() {
-    m_data.clear();
-    m_delays.clear();
-}
-
-void GifWriter::setAspectRatioMode(Qt::AspectRatioMode mode) { m_mode = mode; }
-
-Qt::AspectRatioMode GifWriter::aspectRatioMode() const { return m_mode; }
+void GifWriter::clear() {}
 
 QString GifWriter::extString() const { return m_extString; }
 
 void GifWriter::setExtString(const QString &newExtString) {
-    m_extString = newExtString.left(255);
+    auto buf = newExtString.toUtf8();
+    m_extString = buf.mid(255);
 }
 
 bool GifWriter::closeEHandle(GifFileType *handle) {

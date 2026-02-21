@@ -16,18 +16,19 @@
 */
 
 #include "settingmanager.h"
-#include "setting.h"
+#include "settings.h"
 
 #include "class/skinmanager.h"
 #include <QFileInfo>
 #include <QMetaEnum>
 
-const auto APP_LASTUSED_PATH = QStringLiteral("app.lastusedpath");
-const auto SKIN_THEME = QStringLiteral("skin.theme");
-const auto APP_WINDOWSIZE = QStringLiteral("app.windowsize");
-const auto APP_LANGUAGE = QStringLiteral("app.lang");
-const auto EDITOR_RECENTFILES = QStringLiteral("editor.recentfiles");
-const auto OTHER_USE_NATIVE_TITLEBAR = QStringLiteral("sys.nativeTitleBar");
+Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_LASTUSED_PATH, ("app.lastusedpath"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, SKIN_THEME, ("skin.theme"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_WINDOWSIZE, ("app.windowsize"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_LANGUAGE, ("app.lang"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, EDITOR_RECENTFILES, ("editor.recentfiles"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_USE_NATIVE_TITLEBAR,
+                          ("sys.nativeTitleBar"))
 
 SettingManager::SettingManager() { load(); }
 
@@ -64,6 +65,12 @@ void SettingManager::load() {
             m_lastUsedPath.clear();
         }
     }
+}
+
+qsizetype SettingManager::logCount() const { return m_logCount; }
+
+void SettingManager::setLogCount(qsizetype newLogCount) {
+    m_logCount = newLogCount;
 }
 
 bool SettingManager::useNativeTitleBar() const { return m_useNativeTitleBar; }

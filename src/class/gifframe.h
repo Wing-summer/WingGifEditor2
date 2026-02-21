@@ -15,23 +15,32 @@
 ** =============================================================================
 */
 
-#ifndef CROPIMAGECOMMAND_H
-#define CROPIMAGECOMMAND_H
+#ifndef GIFFRAME_H
+#define GIFFRAME_H
 
-#include "undocommand.h"
+#include "qtlockedfile.h"
 
-class CropImageCommand : public UndoCommand {
+#include <QImage>
+#include <QScopedPointer>
+
+class GifFrame : public QtLockedFile {
+    Q_OBJECT
+
 public:
-    explicit CropImageCommand(GifContentModel *model, const QRect &rect,
-                              QUndoCommand *parent = nullptr);
+    explicit GifFrame(const QImage &img, int delay, const QString &cachePath);
+    virtual ~GifFrame();
 
 public:
-    void undo() override;
-    void redo() override;
+    QImage image() const;
+
+public:
+    bool isValidFrame() const;
+
+    int delay() const;
+    void setDelay(int newDelay);
 
 private:
-    QRect _rect;
-    GifContentModel::Result _cached;
+    int _delay = 0;
 };
 
-#endif // CROPIMAGECOMMAND_H
+#endif // GIFFRAME_H

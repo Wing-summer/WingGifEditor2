@@ -43,19 +43,28 @@ void RibbonButtonGroup::addButton(QToolButton *button) {
         return;
     }
 
-    button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-
-    auto font = button->font();
-    QFontMetrics fm(font);
+    button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     button->setIconSize(QSize(32, 32));
     button->setAutoRaise(true);
     button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+    auto txt = button->text();
+    auto font = button->font();
+    auto metr = QFontMetrics(font);
+    auto txtlen = int(metr.horizontalAdvance(txt) + 15);
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 0)
+    // Icon size + padding = 32 + 30
+    button->setFixedWidth(qMax(32 + 30, txtlen));
+#else
+    button->setFixedWidth(qMax(32 + 15, txtlen));
+#endif
 
     _buttons << button;
     ui->horizontalLayout->addWidget(button);
 
     if (_buttons.size() == 1) {
-        emit emptyStatusChanged(false);
+        Q_EMIT emptyStatusChanged(false);
     }
 }
 
@@ -64,7 +73,7 @@ void RibbonButtonGroup::removeButton(QToolButton *button) {
         ui->horizontalLayout->removeWidget(button);
         _buttons.removeOne(button);
         if (_buttons.empty()) {
-            emit emptyStatusChanged(true);
+            Q_EMIT emptyStatusChanged(true);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,31 +17,35 @@
 
 #include "removeframecommand.h"
 
-RemoveFrameCommand::RemoveFrameCommand(GifContentModel *helper,
-                                       QVector<int> &frames,
+RemoveFrameCommand::RemoveFrameCommand(GifContentModel *model,
+                                       const QVector<int> &findices,
                                        QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper) {
-    indices = frames;
-    std::sort(indices.begin(), indices.end(), std::greater<int>());
+    : UndoCommand(model, parent) {
+    if (findices.isEmpty()) {
+        setObsolete(true);
+        return;
+    }
 
-    for (auto i : indices) {
-        if (i < 0 || i >= gif->frameCount()) {
+    _indices = findices;
+    std::sort(_indices.begin(), _indices.end(), std::greater<int>());
+    for (auto i : std::as_const(_indices)) {
+        if (i < 0 || i >= model->frameCount()) {
             continue;
         }
-        GifData d;
-        d.delay = gif->delay(i);
-        d.image = gif->image(i);
-        imgs.append(d);
+        imgs.append(model->frame(i));
     }
 }
 
 void RemoveFrameCommand::undo() {
-    for (int i = 0; i < indices.size() && i < imgs.size(); ++i) {
-        gif->insertFrame(imgs.at(i), indices.at(i));
+    auto gif = model();
+
+    for (int i = 0; i < _indices.size() && i < imgs.size(); ++i) {
+        gif->insertFrame(_indices.at(i), imgs.at(i));
     }
 
-    if (auto lv = gif->linkedListView(); lv && !indices.isEmpty()) {
-        const auto target = qBound(0, indices.last(), static_cast<int>(gif->frameCount() - 1));
+    if (auto lv = gif->linkedListView(); lv && !_indices.isEmpty()) {
+        const auto target =
+            qBound(0, _indices.last(), static_cast<int>(gif->frameCount() - 1));
         if (target >= 0) {
             lv->setCurrentIndex(gif->index(target));
         }
@@ -49,14 +53,16 @@ void RemoveFrameCommand::undo() {
 }
 
 void RemoveFrameCommand::redo() {
-    for (auto p = indices.rbegin(); p < indices.rend(); ++p) {
+    auto gif = model();
+
+    for (auto p = _indices.rbegin(); p < _indices.rend(); ++p) {
         if (*p >= 0 && *p < gif->frameCount()) {
-            gif->removeFrames(*p);
+            gif->removeFrame(*p);
         }
     }
 
-    if (auto lv = gif->linkedListView(); lv && !indices.isEmpty()) {
-        auto l = indices.last();
+    if (auto lv = gif->linkedListView(); lv && !_indices.isEmpty()) {
+        auto l = _indices.last();
         const auto c = static_cast<int>(gif->frameCount());
         if (c > 0) {
             if (l >= c) {

@@ -31,6 +31,7 @@ AboutSoftwareDialog::AboutSoftwareDialog(QWidget *parent)
     ui->lblVersion->setText(WINGGIF_VERSION);
 
     _dialog->setWindowTitle(tr("About"));
+    _dialog->setWindowIcon(ICONRES(QStringLiteral("soft")));
 
     Utilities::moveToCenter(this);
 }

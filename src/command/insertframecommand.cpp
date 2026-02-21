@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,31 +17,43 @@
 
 #include "insertframecommand.h"
 
-InsertFrameCommand::InsertFrameCommand(GifContentModel *model, int index,
-                                       const QVector<GifData> &images,
-                                       QUndoCommand *parent)
-    : QUndoCommand(parent), gif(model), oldindex(index), oldimgs(images) {}
+InsertFrameCommand::InsertFrameCommand(
+    GifContentModel *model, int index,
+    const std::function<QPair<int, QImage>(int index)> &imgProc, int total,
+    QUndoCommand *parent)
+    : UndoCommand(model, parent), _oldindex(index) {
+    for (int i = 0; i < total; ++i) {
+        auto d = imgProc(i);
+        _data.append(model->generateFrame(d.second, d.first));
+    }
+}
+
+InsertFrameCommand::InsertFrameCommand(
+    GifContentModel *model, int index,
+    const QVector<QSharedPointer<GifFrame>> &data, QUndoCommand *parent)
+    : UndoCommand(model, parent), _oldindex(index), _data(data) {}
 
 void InsertFrameCommand::undo() {
-    gif->removeFrames(oldindex, oldimgs.size());
+    auto gif = model();
+    gif->removeFrames(_oldindex, _data.size());
     if (auto lv = gif->linkedListView()) {
         lv->clearSelection();
         if (gif->frameCount() > 0) {
-            const auto target = qBound(0, oldindex,
-                                       static_cast<int>(gif->frameCount() - 1));
+            const auto target =
+                qBound(0, _oldindex, static_cast<int>(gif->frameCount() - 1));
             lv->setCurrentIndex(gif->index(target));
         }
     }
 }
 
 void InsertFrameCommand::redo() {
-    gif->insertFrames(oldimgs, oldindex);
-
+    auto gif = model();
+    gif->insertFrames(_oldindex, _data);
     if (auto lv = gif->linkedListView()) {
         lv->clearSelection();
         if (gif->frameCount() > 0) {
-            const auto target = qBound(0, oldindex,
-                                       static_cast<int>(gif->frameCount() - 1));
+            const auto target =
+                qBound(0, _oldindex, static_cast<int>(gif->frameCount() - 1));
             lv->setCurrentIndex(gif->index(target));
         }
     }

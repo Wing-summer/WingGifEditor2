@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,19 +17,25 @@
 
 #include "rotateframecommand.h"
 
-RotateFrameCommand::RotateFrameCommand(GifContentModel *helper,
-                                       bool isclockwise, QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper), clockwise(isclockwise) {}
+RotateFrameCommand::RotateFrameCommand(GifContentModel *model, bool isclockwise,
+                                       QUndoCommand *parent)
+    : UndoCommand(model, parent), clockwise(isclockwise) {}
 
 void RotateFrameCommand::undo() {
-    gif->rotateFrames(!clockwise);
+    auto gif = model();
+    gif->replaceFrames(_cached.olddata.first, _cached.olddata.second);
     if (auto editor = gif->linkedGifEditor()) {
         editor->fitOpenSize();
     }
 }
 
 void RotateFrameCommand::redo() {
-    gif->rotateFrames(clockwise);
+    auto gif = model();
+    if (_cached.isValid()) {
+        gif->replaceFrames(_cached.newdata.first, _cached.newdata.second);
+    } else {
+        _cached = gif->rotateFrames(clockwise);
+    }
     if (auto editor = gif->linkedGifEditor()) {
         editor->fitOpenSize();
     }

@@ -196,6 +196,7 @@ QGroupBox:flat
 
 QCheckBox::indicator,
 QTreeView::indicator,
+QTableWidget::indicator,
 QGroupBox::indicator
 {
     width: 1em;
@@ -738,22 +739,6 @@ QFrame[frameShape="6"]  /* QFrame::StyledPanel == 0x0006 */
     border-color: #eff0f1;
     background-color: #bab9b8;
     border-radius: 0.23em;
-}
-
-/* Provide highlighting for frame objects. */
-QFrame[frameShape="2"]:hover,
-QFrame[frameShape="3"]:hover,
-QFrame[frameShape="4"]:hover,
-QFrame[frameShape="5"]:hover,
-QFrame[frameShape="6"]:hover
-{
-    border: 0.04em solid rgba(51, 164, 223, 0.5);
-}
-
-/* Don't provide an outline if we have a widget that takes up the space. */
-QFrame[frameShape] QAbstractItemView:hover
-{
-    border: 0em solid black;
 }
 
 /**
@@ -2259,7 +2244,7 @@ QHeaderView::section::horizontal
     border-left: transparent;
 }
 
-QHeaderView[showSortIndicator="true"]::section::horizontal
+QHeaderView::section::horizontal
 {
     /* Same as the width of the arrow subcontrols below. */
     padding-right: 0.8em;
@@ -2281,7 +2266,7 @@ QHeaderView::section::vertical::only-one:hover
     border: 0.04em solid rgba(51, 164, 223, 0.5);
 }
 
-QHeaderView[showSortIndicator="true"]::down-arrow
+QHeaderView::down-arrow
 {
     image: url(:/light/down_arrow.svg);
     /**
@@ -2304,7 +2289,7 @@ QHeaderView[showSortIndicator="true"]::down-arrow
     padding-left: -0.8em;
 }
 
-QHeaderView[showSortIndicator="true"]::up-arrow
+QHeaderView::up-arrow
 {
     image: url(:/light/up_arrow.svg);
     subcontrol-origin: content;
@@ -2599,18 +2584,52 @@ QTabWidget#RIBBON>QTabBar::tab {
 
 #RIBBON_HIDE_BTN
 {
-    image: url(:/dark/ads_menu_button.svg);
-}
-
-#RIBBON_HIDE_BTN
-{
+    image: url(:/light/ads_menu_button.svg);
     border: none;
     background-color: transparent;
 }
 
 #RIBBON_HIDE_BTN:checked
 {
-    image: url(:/dark/ads_maximize.svg);
+    image: url(:/light/ads_maximize.svg);
+    border: none;
+    background-color: transparent;
+}
+
+RibbonTabContent #btnPrev
+{
+    border: none;
+    icon: url(:/light/left_arrow.svg)
+}
+
+RibbonTabContent #btnPrev:disabled
+{
+    border: none;
+    icon: url(:/light/left_arrow_disabled.svg)
+}
+
+RibbonTabContent #btnNext
+{
+    border: none;
+    icon: url(:/light/right_arrow.svg)
+}
+
+RibbonTabContent #btnNext:disabled
+{
+    border: none;
+    icon: url(:/light/right_arrow_disabled.svg)
+}
+
+RibbonTabContent #btnPrev:hover
+{
+    border: none;
+    icon: url(:/light/left_arrow_hover.svg)
+}
+
+RibbonTabContent #btnNext:hover
+{
+    border: none;
+    icon: url(:/light/right_arrow_hover.svg)
 }
 
 RibbonButtonGroup QToolButton
@@ -2633,6 +2652,8 @@ RibbonButtonGroup QToolButton:pressed
     background-color: #3daee9;
 }
 
+RibbonTabContent QFrame[frameShape="4"]:hover,
+RibbonTabContent QFrame[frameShape="5"]:hover,
 RibbonButtonGroup QFrame[frameShape="4"]:hover,
 RibbonButtonGroup QFrame[frameShape="5"]:hover
 {
@@ -2653,11 +2674,15 @@ QHexView
     qproperty-selBackgroundColor: rgba(51, 164, 223, 0.5);
     qproperty-headerColor: #07DBD7;
     qproperty-addressColor: #07DBD7;
+    qproperty-borderColor: #31363b;
 }
 
 Toast
 {
-    qproperty-textcolor: white;
-    qproperty-backcolor: black;
-    qproperty-fontPointSize: 18;
+    qproperty-textcolor: black;
+    qproperty-backcolor: white;
 }
+
+QStatusBar::item { border: 0px solid black; }
+
+SplashDialog { border: 1px solid #626568; }

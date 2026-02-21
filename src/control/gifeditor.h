@@ -44,7 +44,7 @@ public slots:
 
     void setCropMode(bool b);
 
-    void setDrawTool(DrawTool tool);
+    void setDrawTool(GifEditor::DrawTool tool);
 
     void zoomIn();
     void zoomOut();

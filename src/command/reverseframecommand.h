@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,18 +18,19 @@
 #ifndef REVERSEFRAMECOMMAND_H
 #define REVERSEFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QUndoCommand>
+#include "undocommand.h"
 
-class ReverseFrameCommand : public QUndoCommand {
+class ReverseFrameCommand : public UndoCommand {
 public:
-    ReverseFrameCommand(GifContentModel *helper,
-                        QUndoCommand *parent = nullptr);
+    explicit ReverseFrameCommand(GifContentModel *model, qsizetype begin,
+                                 qsizetype end, QUndoCommand *parent = nullptr);
+
+public:
     void undo() override;
     void redo() override;
 
 private:
-    GifContentModel *gif;
+    qsizetype _begin, _end;
 };
 
 #endif // REVERSEFRAMECOMMAND_H

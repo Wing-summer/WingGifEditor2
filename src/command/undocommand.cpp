@@ -15,23 +15,11 @@
 ** =============================================================================
 */
 
-#ifndef CROPIMAGECOMMAND_H
-#define CROPIMAGECOMMAND_H
-
 #include "undocommand.h"
 
-class CropImageCommand : public UndoCommand {
-public:
-    explicit CropImageCommand(GifContentModel *model, const QRect &rect,
-                              QUndoCommand *parent = nullptr);
+UndoCommand::UndoCommand(GifContentModel *model, QUndoCommand *parent)
+    : QUndoCommand(parent), _model(model) {
+    Q_ASSERT(model);
+}
 
-public:
-    void undo() override;
-    void redo() override;
-
-private:
-    QRect _rect;
-    GifContentModel::Result _cached;
-};
-
-#endif // CROPIMAGECOMMAND_H
+GifContentModel *UndoCommand::model() const { return _model; }

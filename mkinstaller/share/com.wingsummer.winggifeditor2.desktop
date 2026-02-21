@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=WingGifEditor2
-Name[zh_CN]=羽云 GIF 编辑器
+Name[zh_CN]=羽云 GIF 编辑器2
 Categories=Graphics;2DGraphics;
 Exec="/opt/WingGifEditor2/WingGifEditor2" %F
 Encoding=UTF-8

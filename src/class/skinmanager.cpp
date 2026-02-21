@@ -23,28 +23,39 @@
 #include <QApplication>
 #include <QFile>
 #include <QFont>
+#include <QIcon>
+#include <QPalette>
 #include <QScreen>
 #include <QStyleFactory>
 
-SkinManager::SkinManager(QObject *parent) : QObject(parent) {
+SkinManager::SkinManager() {
     ASSERT_SINGLETON;
 
     int theme = SettingManager::instance().themeID();
 
     QFile qss;
     switch (Theme(theme)) {
-    case Theme::Dark:
+    case Theme::Dark: {
         setTheme(Theme::Dark);
         qss.setFileName("://dark/stylesheet.qss");
-        break;
-    case Theme::Light:
+        auto palette = qApp->palette();
+        palette.setColor(QPalette::Active, QPalette::Link,
+                         QColor::fromRgb(88, 147, 248));
+        qApp->setPalette(palette);
+    } break;
+    case Theme::Light: {
         setTheme(Theme::Light);
         qss.setFileName("://light/stylesheet.qss");
-        break;
+    } break;
     }
-    qss.open(QFile::ReadOnly | QFile::Text);
+    auto r = qss.open(QFile::ReadOnly | QFile::Text);
+    Q_UNUSED(r);
+#ifdef Q_OS_WIN
+    qApp->setStyle(QStyleFactory::create("windowsvista"));
+#else
     qApp->setStyle(QStyleFactory::create("fusion"));
-    qApp->setStyleSheet(qss.readAll());
+#endif
+    qApp->setStyleSheet(QString::fromUtf8(qss.readAll()));
     qss.close();
 }
 
@@ -55,7 +66,36 @@ SkinManager &SkinManager::instance() {
     return instance;
 }
 
-void SkinManager::setTheme(SkinManager::Theme theme) { m_theme = theme; }
+void SkinManager::setTheme(SkinManager::Theme theme) {
+    if (m_theme != theme) {
+        m_theme = theme;
+        m_cache.clear();
+    }
+}
+
+QIcon SkinManager::themeIcon(const QString &name) {
+    auto picon = m_cache.find(name);
+    if (picon == m_cache.end()) {
+        switch (m_theme) {
+        case Theme::Dark: {
+            QIcon icon(QStringLiteral("://dark/") + name +
+                       QStringLiteral(".svg"));
+            m_cache.insert(name, icon);
+            return icon;
+        }
+        case Theme::Light: {
+            QIcon icon(QStringLiteral("://light/") + name +
+                       QStringLiteral(".svg"));
+            m_cache.insert(name, icon);
+            return icon;
+        }
+        default:
+            return {};
+        }
+    } else {
+        return *picon;
+    }
+}
 
 SkinManager::Theme SkinManager::currentTheme() const { return m_theme; }
 

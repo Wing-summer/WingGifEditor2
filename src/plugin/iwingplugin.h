@@ -36,7 +36,6 @@
 
 /**
  * Don't try to modify this file, unless you are the dev
- * 不要尝试来修改该文件，除非你是开发者
  */
 
 namespace WingGif {

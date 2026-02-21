@@ -16,11 +16,13 @@
 */
 
 #include "logger.h"
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QRegularExpression>
 
+#include "settingmanager.h"
 #include "utilities.h"
 
 #define INFOLOG(msg) "<font color=\"green\">" + msg + "</font>"
@@ -35,24 +37,28 @@ Logger::Logger(QObject *parent)
                               .arg(APP_NAME, WINGGIF_VERSION,
                                    QDateTime::currentDateTime().toString(
                                        QStringLiteral("yyyyMMdd_hhmmsss")));
-    auto logPath =
+    QString logPath =
         Utilities::getAppDataPath() + QDir::separator() + QStringLiteral("log");
 
     QDir logDir;
     logDir.mkpath(logPath);
     logDir.setPath(logPath);
+
+    // clean up log files if too much
+    auto logs = logDir.entryInfoList({"*.log"}, QDir::Files, QDir::Time);
+    auto total = logs.size();
+    for (decltype(total) i = SettingManager::instance().logCount() - 1;
+         i < total; ++i) {
+        QFile::remove(logs.at(i).absoluteFilePath());
+    }
+
     auto path = logDir.absoluteFilePath(newFileName);
     _file = QSharedPointer<QFile>(new QFile(path));
     if (_file->open(QIODevice::WriteOnly | QIODevice::Text)) {
         _stream->setDevice(_file.get());
     }
 
-    connect(this, &Logger::log, this, [this](const QString &message) {
-        auto str = message;
-        *_stream << str.remove(QRegularExpression("<[^>]*>")) << Qt::endl;
-    });
-
-    if (qEnvironmentVariableIntValue("debug")) {
+    if (qEnvironmentVariableIntValue("WING_DEBUG")) {
         setLogLevel(Level::q4DEBUG);
     } else {
 #ifdef QT_DEBUG
@@ -68,6 +74,8 @@ Logger::~Logger() {
     _file->close();
 }
 
+void Logger::__log(const QString &message) { *_stream << message << Qt::endl; }
+
 Logger &Logger::instance() {
     static Logger ins;
     return ins;
@@ -75,47 +83,74 @@ Logger &Logger::instance() {
 
 Logger::Level Logger::logLevel() const { return _level; }
 
-void Logger::_log(const QString &message) { emit instance().log(message); }
+void Logger::logPrint(const QString &message) {
+    Q_EMIT instance().log(message);
+}
+
+void Logger::newLine() { logPrint({}); }
 
 void Logger::trace(const QString &message) {
-    if (instance()._level >= q5TRACE) {
-        QString str = message;
-        emit instance().log(tr("[Trace]") + str.replace("\n", "<br />"));
+    auto &ins = instance();
+    QString msg = tr("[Trace]") + message;
+    ins.__log(msg);
+    if (ins._level >= q5TRACE) {
+        Q_EMIT ins.log(packDebugStr(msg));
     }
 }
 
 void Logger::warning(const QString &message) {
-    if (instance()._level >= q2WARN) {
-        QString str = message;
-        emit instance().log(
-            WARNLOG(tr("[Warn]") + str.replace("\n", "<br />")));
+    auto &ins = instance();
+    QString msg = tr("[Warn]") + message;
+    ins.__log(msg);
+    if (ins._level >= q2WARN) {
+        Q_EMIT ins.log(packWarnStr(msg));
     }
 }
 
 void Logger::info(const QString &message) {
-    if (instance()._level >= q3INFO) {
-        QString str = message;
-        emit instance().log(
-            INFOLOG(tr("[Info]") + str.replace("\n", "<br />")));
+    auto &ins = instance();
+    QString msg = tr("[Info]") + message;
+    ins.__log(msg);
+    if (ins._level >= q3INFO) {
+        Q_EMIT ins.log(packInfoStr(msg));
     }
 }
 
 void Logger::debug(const QString &message) {
-    if (instance()._level >= q4DEBUG) {
-        QString str = message;
-        emit instance().log(tr("[Debug]") + str.replace("\n", "<br />"));
+    auto &ins = instance();
+    QString msg = tr("[Debug]") + message;
+    ins.__log(msg);
+    if (ins._level >= q4DEBUG) {
+        Q_EMIT ins.log(packDebugStr(msg));
     }
 }
 
 void Logger::critical(const QString &message) {
-    if (instance()._level >= q0FATAL) {
-        QString str = message;
-        emit instance().log(
-            ERRLOG(tr("[Error]") + str.replace("\n", "<br />")));
+    auto &ins = instance();
+    QString msg = tr("[Error]") + message;
+    ins.__log(msg);
+    if (ins._level >= q0FATAL) {
+        Q_EMIT ins.log(packErrorStr(msg));
     }
 }
 
 void Logger::setLogLevel(Level level) { _level = level; }
+
+QString Logger::packInfoStr(QString msg) {
+    return INFOLOG(msg.replace("\n", "<br />"));
+}
+
+QString Logger::packDebugStr(QString msg) {
+    return msg.replace("\n", "<br />");
+}
+
+QString Logger::packErrorStr(QString msg) {
+    return ERRLOG(msg.replace("\n", "<br />"));
+}
+
+QString Logger::packWarnStr(QString msg) {
+    return WARNLOG(msg.replace("\n", "<br />"));
+}
 
 QString Logger::getString(Level level) {
     switch (level) {

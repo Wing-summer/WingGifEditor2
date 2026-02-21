@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,25 +18,19 @@
 #ifndef SCALEFRAMECOMMAND_H
 #define SCALEFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QUndoCommand>
+#include "undocommand.h"
 
-#include <QTemporaryDir>
-#include <memory>
-
-class ScaleFrameCommand : public QUndoCommand {
+class ScaleFrameCommand : public UndoCommand {
 public:
-    ScaleFrameCommand(GifContentModel *helper, int w, int h,
-                      QUndoCommand *parent = nullptr);
+    explicit ScaleFrameCommand(GifContentModel *model, int w, int h,
+                               QUndoCommand *parent = nullptr);
 
     void undo() override;
     void redo() override;
 
 private:
-    GifContentModel *gif;
-    std::unique_ptr<QTemporaryDir> bufferDir;
-    QVector<QString> bufferFiles;
     int _w, _h;
+    GifContentModel::Result _cached;
 };
 
 #endif // SCALEFRAMECOMMAND_H

@@ -20,13 +20,12 @@
 
 #include <QObject>
 #include <QTimer>
-#include <QVector>
 
 class PlayGifManager : public QObject {
     Q_OBJECT
 public:
     explicit PlayGifManager(QObject *parent = nullptr);
-    void setTickIntervals(const QVector<int> &intervals);
+    void setTickIntervals(const std::function<int(qsizetype)> &delegent);
     void play(int index);
     void stop();
 
@@ -43,7 +42,8 @@ private:
 private:
     int curpos = 0;
     bool _isContinue = false;
-    QVector<int> m_intervals;
+
+    std::function<int(qsizetype)> _delegent;
 };
 
 #endif // PLAYGIFMANAGER_H

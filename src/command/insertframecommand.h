@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,24 +18,28 @@
 #ifndef INSERTFRAMECOMMAND_H
 #define INSERTFRAMECOMMAND_H
 
-#include <QUndoCommand>
+#include "undocommand.h"
 
-#include "class/gifcontentmodel.h"
-#include "utilities.h"
+#include <functional>
 
-class InsertFrameCommand : public QUndoCommand {
+class InsertFrameCommand : public UndoCommand {
 public:
-    InsertFrameCommand(GifContentModel *model, int index,
-                       const QVector<GifData> &images,
-                       QUndoCommand *parent = nullptr);
+    explicit InsertFrameCommand(
+        GifContentModel *model, int index,
+        const std::function<QPair<int, QImage>(int index)> &imgProc, int total,
+        QUndoCommand *parent = nullptr);
 
+    explicit InsertFrameCommand(GifContentModel *model, int index,
+                                const QVector<QSharedPointer<GifFrame>> &data,
+                                QUndoCommand *parent = nullptr);
+
+public:
     void undo() override;
     void redo() override;
 
 protected:
-    GifContentModel *gif;
-    int oldindex;
-    QVector<GifData> oldimgs;
+    int _oldindex;
+    QVector<QSharedPointer<GifFrame>> _data;
 };
 
 #endif // INSERTFRAMECOMMAND_H

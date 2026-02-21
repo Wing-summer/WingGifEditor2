@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,20 +18,21 @@
 #ifndef FLIPFRAMECOMMAND_H
 #define FLIPFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QUndoCommand>
+#include "undocommand.h"
 
-class FlipFrameCommand : public QUndoCommand {
+class FlipFrameCommand : public UndoCommand {
 public:
-    FlipFrameCommand(GifContentModel *helper, Qt::Orientation dir,
-                     QUndoCommand *parent = nullptr);
+    explicit FlipFrameCommand(GifContentModel *model,
+                              const QVector<int> &indices, Qt::Orientation dir,
+                              QUndoCommand *parent = nullptr);
 
+public:
     void undo() override;
     void redo() override;
 
 private:
-    GifContentModel *gif;
-    Qt::Orientation olddir;
+    Qt::Orientation _dir;
+    QMap<int, QSharedPointer<GifFrame>> _oldcache, _newcache;
 };
 
 #endif // FLIPFRAMECOMMAND_H

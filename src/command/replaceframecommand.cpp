@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,33 +17,20 @@
 
 #include "replaceframecommand.h"
 
-ReplaceFrameCommand::ReplaceFrameCommand(GifContentModel *helper,
-                                         const QVector<int> &indices,
-                                         const QVector<QImage> &newimgs,
-                                         QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper), olds(indices), bufferimage(newimgs) {}
+ReplaceFrameCommand::ReplaceFrameCommand(
+    GifContentModel *model, const QMap<int, QSharedPointer<GifFrame>> &newimgs,
+    QUndoCommand *parent)
+    : UndoCommand(model, parent), _cache(newimgs) {}
 
 void ReplaceFrameCommand::undo() {
-    auto len = olds.size();
-    if (len) {
-        len = qMin(len, bufferimage.size());
-        for (int i = 0; i < len; ++i) {
-            const auto index = olds.at(i);
-            if (index < 0 || index >= gif->frameCount()) {
-                continue;
-            }
-            const auto img = gif->image(index);
-            gif->setFrameImage(index, bufferimage.at(i));
-            bufferimage.replace(i, img);
-        }
-    } else {
-        len = qMin(bufferimage.size(), static_cast<int>(gif->frameCount()));
-        for (int i = 0; i < len; ++i) {
-            const auto img = gif->image(i);
-            gif->setFrameImage(i, bufferimage.at(i));
-            bufferimage.replace(i, img);
-        }
+    auto gif = model();
+    QMap<int, QSharedPointer<GifFrame>> cache;
+    for (auto &&[index, frame] : _cache.asKeyValueRange()) {
+        auto d = gif->frame(index);
+        gif->replaceFrame(index, frame);
+        cache.insert(index, d);
     }
+    _cache = cache;
 }
 
 void ReplaceFrameCommand::redo() { undo(); }

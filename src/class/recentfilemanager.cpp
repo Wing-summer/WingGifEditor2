@@ -94,6 +94,7 @@ void RecentFileManager::addRecentFile(const QString &info) {
             m_recents.pop_back();
         }
         auto a = new QAction(m_menu);
+        a->setIcon(ICONRES(QStringLiteral("gifs")));
         a->setData(info);
         a->setText(getDisplayFileName(info));
         a->setToolTip(a->text());

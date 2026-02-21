@@ -17,7 +17,7 @@
 
 #include "mainwindow.h"
 
-#include <QtConcurrent>
+#include <QtConcurrent/QtConcurrentMap>
 
 #include <QDesktopServices>
 #include <QSplitter>
@@ -27,7 +27,7 @@
 #include "class/appmanager.h"
 #include "class/clipboardhelper.h"
 #include "class/gifcontentmodel.h"
-#include "class/gifreader.h"
+#include "class/giffile.h"
 #include "class/gifwriter.h"
 #include "class/logger.h"
 #include "class/qkeysequences.h"
@@ -98,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     _model = new GifContentModel(_gallery);
     _model->setLinkedListView(_gallery);
     _model->setLinkedEditor(_editor);
+    connect(_model, &GifContentModel::sigUpdateUIProcess, this,
+            [] { qApp->processEvents(); });
     _gallery->setSelectionMode(QAbstractItemView::ExtendedSelection);
     _gallery->setMaximumHeight(300);
     connect(_gallery->selectionModel(), &QItemSelectionModel::currentRowChanged,
@@ -135,6 +137,12 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     buildUpContent(cw);
 
     _player = new PlayGifManager(this);
+    _player->setTickIntervals([this](qsizetype index) -> int {
+        if (index < 0 || index >= _model->frameCount()) {
+            return -1;
+        }
+        return _model->delay(index);
+    });
     connect(_player, &PlayGifManager::tick, this, [=](int index) {
         auto i = _model->index(index);
         _gallery->setCurrentIndex(i);
@@ -200,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
 
     setEditModeEnabled(false);
 
-    setWindowTitle(tr("WingGifEditor"));
+    setWindowTitle(tr("WingGifEditor2"));
     setWindowIcon(ICONRES("icon"));
 
     this->setUpdatesEnabled(true);
@@ -258,32 +266,14 @@ void MainWindow::buildUpRibbonBar() {
             });
 }
 
-void MainWindow::on_new_frompics() {
+void MainWindow::on_new() {
     _player->stop();
     if (ensureSafeClose()) {
         NewDialog d(NewType::FromPics, this);
         if (d.exec()) {
             WaitingLoop dw(tr("NewFromPicsGif"));
             if (loadfromImages(d.getResult(), getNewFrameInterval())) {
-                _curfilename = QStringLiteral(":"); // 表示新建
-                setSaved(false);
-
-                _gallery->setCurrentIndex(_model->index(0));
-                setEditModeEnabled(true);
-            } else {
-            }
-        }
-    }
-}
-
-void MainWindow::on_new_fromgifs() {
-    _player->stop();
-    if (ensureSafeClose()) {
-        NewDialog d(NewType::FromGifs, this);
-        if (d.exec()) {
-            WaitingLoop dw(tr("NewFromGifsGif"));
-            if (loadfromGifs(d.getResult())) {
-                _curfilename = QStringLiteral(":"); // 表示新建
+                _curfilename = QStringLiteral(":");
                 setSaved(false);
 
                 _gallery->setCurrentIndex(_model->index(0));
@@ -430,13 +420,10 @@ void MainWindow::on_redo() {
 void MainWindow::on_copy() {
     _player->stop();
     auto sels = _gallery->selectionModel()->selectedRows();
-    QVector<GifData> sel;
+    QVector<QSharedPointer<GifFrame>> sel;
     for (auto &i : sels) {
         auto index = i.row();
-        GifData d;
-        d.delay = _model->delay(index);
-        d.image = _model->image(index);
-        sel.append(d);
+        sel.append(_model->frame(index));
     }
     ClipBoardHelper::setImageFrames(sel);
 }
@@ -444,17 +431,12 @@ void MainWindow::on_copy() {
 void MainWindow::on_cut() {
     _player->stop();
     auto sels = _gallery->selectionModel()->selectedRows();
-    QVector<GifData> sel;
     QVector<int> indices;
+    QVector<QSharedPointer<GifFrame>> sel;
     for (auto &i : sels) {
-        GifData d;
         auto index = i.row();
         indices.append(index);
-
-        d.delay = _model->delay(index);
-        d.image = _model->image(i.row());
-
-        sel.append(d);
+        sel.append(_model->frame(index));
     }
     ClipBoardHelper::setImageFrames(sel);
     undo.push(new RemoveFrameCommand(_model, indices));
@@ -463,7 +445,7 @@ void MainWindow::on_cut() {
 void MainWindow::on_paste() {
     _player->stop();
     auto pos = _gallery->currentIndex().row() + 1;
-    QVector<GifData> imgs;
+    QVector<QSharedPointer<GifFrame>> imgs;
     ClipBoardHelper::getImageFrames(imgs);
     if (imgs.count()) {
         undo.push(new InsertFrameCommand(_model, pos, imgs));
@@ -472,11 +454,7 @@ void MainWindow::on_paste() {
 
 void MainWindow::on_del() {
     _player->stop();
-    QVector<int> indices;
-    for (auto &item : _gallery->selectionModel()->selectedIndexes()) {
-        indices.append(item.row());
-    }
-    undo.push(new RemoveFrameCommand(_model, indices));
+    undo.push(new RemoveFrameCommand(_model, getSelectedIndices()));
 }
 
 void MainWindow::on_selall() {
@@ -526,10 +504,7 @@ void MainWindow::on_last() {
     _gallery->setCurrentIndex(index);
 }
 
-void MainWindow::on_play() {
-    _player->setTickIntervals(_model->delays());
-    _player->play(_gallery->currentIndex().row());
-}
+void MainWindow::on_play() { _player->play(_gallery->currentIndex().row()); }
 
 void MainWindow::on_stop() { _player->stop(); }
 
@@ -554,22 +529,8 @@ void MainWindow::on_decreaseframe() {
     ReduceFrameDialog d(_model->frameCount(), this);
     if (d.exec()) {
         auto res = d.getResult();
-        auto from = res.start;
-        auto step = res.stepcount;
-        auto to = res.end;
-        QVector<int> delindices, modinter;
-        auto ii = from;
-        auto q = step + 1;
-        for (auto i = ii; i <= to; i++) {
-            if (i == ii + step) {
-                ii += q;
-                delindices.append(i);
-            } else {
-                modinter.append(_model->delay(i) * (q + 1) / q);
-            }
-        }
-
-        undo.push(new ReduceFrameCommand(_model, delindices, modinter));
+        undo.push(
+            new ReduceFrameCommand(_model, res.start, res.end, res.stepcount));
     }
 }
 
@@ -587,7 +548,7 @@ void MainWindow::on_delafter() {
 
 void MainWindow::on_reverse() {
     _player->stop();
-    undo.push(new ReverseFrameCommand(_model));
+    undo.push(new ReverseFrameCommand(_model, 0, _model->frameCount() - 1));
 }
 
 void MainWindow::on_moveleft() {
@@ -633,12 +594,12 @@ void MainWindow::on_createreverse() {
     CreateReverseDialog d(_model->frameCount(), this);
     if (d.exec()) {
         auto res = d.getResult();
-        QVector<GifData> datas;
+        QVector<QSharedPointer<GifFrame>> datas;
+        datas.reserve(res.end - res.start + 1);
         for (int i = res.end; i >= res.start; --i) {
-            GifData d;
-            d.delay = _model->delay(i);
-            d.image = _model->image(i);
-            datas.append(d);
+            auto image = _model->image(i);
+            auto delay = _model->delay(i);
+            datas.append(_model->generateFrame(image, delay));
         }
         undo.push(new InsertFrameCommand(_model, res.end, datas));
     }
@@ -652,7 +613,6 @@ void MainWindow::on_setdelay() {
     _player->stop();
 
     auto mod = QGuiApplication::keyboardModifiers();
-    auto indices = _gallery->selectionModel()->selectedRows();
     bool ok;
     bool isGlobal = mod == Qt::KeyboardModifier::ControlModifier;
 
@@ -662,9 +622,7 @@ void MainWindow::on_setdelay() {
     if (ok) {
         QVector<int> is;
         if (!isGlobal) {
-            for (auto &i : indices) {
-                is.append(i.row());
-            }
+            is = getSelectedIndices();
         }
         undo.push(new DelayFrameCommand(_model, is, time));
     }
@@ -711,6 +669,7 @@ void MainWindow::on_insertpic() {
     if (loadfromImages(filenames, pos, getNewFrameInterval(),
                        _model->frameSize())) {
         Toast::toast(this, NAMEICONRES("pics"), tr("InsertPicsSuccess"));
+    } else {
     }
 }
 
@@ -757,12 +716,13 @@ void MainWindow::on_crop() {
 
 void MainWindow::on_fliph() {
     _player->stop();
-    undo.push(new FlipFrameCommand(_model, Qt::Horizontal));
+    undo.push(
+        new FlipFrameCommand(_model, getSelectedIndices(), Qt::Horizontal));
 }
 
 void MainWindow::on_flipv() {
     _player->stop();
-    undo.push(new FlipFrameCommand(_model, Qt::Vertical));
+    undo.push(new FlipFrameCommand(_model, getSelectedIndices(), Qt::Vertical));
 }
 
 void MainWindow::on_clockwise() {
@@ -773,88 +733,6 @@ void MainWindow::on_clockwise() {
 void MainWindow::on_anticlockwise() {
     _player->stop();
     undo.push(new RotateFrameCommand(_model, false));
-}
-
-void MainWindow::on_exportapply() {
-    _player->stop();
-    auto filename = QFileDialog::getSaveFileName(this, tr("ChooseSaveFile"),
-                                                 _lastusedpath, "png (*.png)");
-    if (filename.isEmpty())
-        return;
-    _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
-    QImage img(_model->frameSize(), QImage::Format_RGBA8888);
-    img.fill(Qt::transparent);
-
-    QPainter p(&img);
-    p.drawImage(img.rect(), QImage(NAMEICONRES("icon")));
-
-    img.save(filename);
-    Toast::toast(this, NAMEICONRES("blank"), tr("ExportSuccess"));
-}
-
-void MainWindow::on_applypic() {
-    _player->stop();
-
-    if (QGuiApplication::keyboardModifiers() ==
-        Qt::KeyboardModifier::ControlModifier) {
-
-        auto filename = QFileDialog::getOpenFileName(
-            this, tr("ChooseFile"), _lastusedpath, "png (*.png)");
-        if (filename.isEmpty())
-            return;
-
-        _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
-
-        QVector<QImage> imgs;
-        QVector<int> empty;
-        QImage img;
-        if (img.load(filename)) {
-            if (img.size() == _model->frameSize()) {
-                auto frames = _model->images();
-                for (auto &f : frames) {
-                    QImage bimg = f.copy();
-                    QPainter painter(&bimg);
-                    painter.drawImage(QPoint(), img, img.rect());
-                    imgs.append(bimg);
-                }
-                undo.push(new ReplaceFrameCommand(_model, empty, imgs));
-                return;
-            }
-        }
-    } else {
-        auto indices = _gallery->selectionModel()->selectedRows();
-        if (!indices.size()) {
-            Toast::toast(this, NAMEICONRES("model"), tr("NoSelection"));
-            return;
-        }
-
-        auto filename = QFileDialog::getOpenFileName(
-            this, tr("ChooseFile"), _lastusedpath, "png (*.png)");
-        if (filename.isEmpty())
-            return;
-
-        _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
-
-        QVector<int> rows;
-        QVector<QImage> imgs;
-
-        QImage img;
-        if (img.load(filename)) {
-            if (img.size() == _model->frameSize()) {
-                for (auto &i : indices) {
-                    auto index = i.row();
-                    rows.append(index);
-                    QImage bimg = _model->image(index).copy();
-                    QPainter painter(&bimg);
-                    painter.drawImage(QPoint(), img, img.rect());
-                    imgs.append(bimg);
-                }
-                undo.push(new ReplaceFrameCommand(_model, rows, imgs));
-                return;
-            }
-        }
-    }
-    Toast::toast(this, NAMEICONRES("model"), tr("InvalidModel"));
 }
 
 void MainWindow::on_fullscreen() { this->showFullScreen(); }
@@ -877,11 +755,8 @@ RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
 
     {
         auto pannel = tab->addGroup(tr("Basic"));
-        addPannelAction(pannel, QStringLiteral("pics"), tr("NewFromPics"),
-                        &MainWindow::on_new_frompics);
-
-        addPannelAction(pannel, QStringLiteral("gifs"), tr("NewFromGifs"),
-                        &MainWindow::on_new_fromgifs);
+        addPannelAction(pannel, QStringLiteral("new"), tr("New"),
+                        &MainWindow::on_new);
 
         addPannelAction(pannel, QStringLiteral("open"), tr("Open"),
                         &MainWindow::on_open, QKeySequence::Open);
@@ -907,7 +782,8 @@ RibbonTabContent *MainWindow::buildFilePage(RibbonTabContent *tab) {
             shortcuts.keySequence(QKeySequences::Key::EXPORT));
         m_editStateWidgets << addPannelAction(
             pannel, QStringLiteral("info"), tr("FileInfo"), [=] {
-                FileInfoDialog(_curfilename, _model->frameSize(), _comment)
+                FileInfoDialog(_curfilename, _model->frameSize(),
+                               _model->comment())
                     .exec();
             });
         m_editStateWidgets << addPannelAction(pannel, QStringLiteral("close"),
@@ -989,10 +865,6 @@ RibbonTabContent *MainWindow::buildEditPage(RibbonTabContent *tab) {
 
     {
         auto pannel = tab->addGroup(tr("Effect"));
-        addPannelAction(pannel, QStringLiteral("blank"), tr("ExportBlank"),
-                        &MainWindow::on_exportapply);
-        addPannelAction(pannel, QStringLiteral("model"), tr("ApplyModel"),
-                        &MainWindow::on_exportapply);
         addPannelAction(pannel, QStringLiteral("reverseplus"),
                         tr("CreateReverse"), &MainWindow::on_createreverse);
         addPannelAction(pannel, QStringLiteral("scaledelay"), tr("ScaleDelay"),
@@ -1002,7 +874,7 @@ RibbonTabContent *MainWindow::buildEditPage(RibbonTabContent *tab) {
 
     {
         auto pannel = tab->addGroup(tr("Merge"));
-        addPannelAction(pannel, QStringLiteral("pics"), tr("InsertPics"),
+        addPannelAction(pannel, QStringLiteral("picture"), tr("InsertPics"),
                         &MainWindow::on_insertpic);
         addPannelAction(pannel, QStringLiteral("gifs"), tr("MergeGIfs"),
                         &MainWindow::on_merge);
@@ -1136,16 +1008,11 @@ void MainWindow::openGif(const QString &filename) {
 }
 
 bool MainWindow::readGif(const QString &gif) {
-    GifReader reader;
-    connect(&reader, &GifReader::sigUpdateUIProcess, this,
-            [] { qApp->processEvents(); });
-
     WaitingLoop dw(tr("ReadingGif"));
-    if (!reader.load(gif)) {
-        return false;
-    }
-    _comment = reader.comment();
-    _model->readGifReader(&reader);
+    auto r = _model->readGifFile(gif);
+
+    // TODO report the error
+
     if (_gallery->currentIndex().row() == 0) {
         auto index = _model->index(0);
         emit _gallery->selectionModel()->currentRowChanged(index, index);
@@ -1158,18 +1025,18 @@ bool MainWindow::readGif(const QString &gif) {
 
 bool MainWindow::writeGif(const QString &gif, unsigned int loopCount,
                           const QString &comment) {
-    GifWriter writer(_model->width(), _model->height());
+    GifWriter writer;
     connect(&writer, &GifWriter::sigUpdateUIProcess, this,
             [] { qApp->processEvents(); });
 
     WaitingLoop dw(tr("WritingGif"));
     writer.setExtString(comment);
-    auto ret = writer.saveLazy(
-        gif, loopCount, _model->frameCount(), _model->delays(),
-        [this](qsizetype i) { return _model->image(i); });
-    if (ret) {
-        _comment = comment;
-    }
+    auto ret = writer.save(gif, loopCount, _model->frameCount(),
+                           [this](qsizetype i) -> QPair<int, QImage> {
+                               auto delay = _model->delay(i);
+                               auto image = _model->image(i);
+                               return qMakePair(delay, image);
+                           });
     return ret;
 }
 
@@ -1187,10 +1054,8 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
         WaitingLoop dw(tr("ExportingGif"));
 
         QVector<int> indices;
-        indices.reserve(_model->frameCount());
-        for (int i = 0; i < _model->frameCount(); ++i) {
-            indices.append(i);
-        }
+        indices.resize(_model->frameCount());
+        std::iota(indices.begin(), indices.end(), 0);
 
         QtConcurrent::blockingMap(indices, [this, &dir, ext](int i) {
             _model->image(i).save(dir.absoluteFilePath(QString::number(i)), ext);
@@ -1201,68 +1066,69 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
 }
 
 bool MainWindow::loadfromImages(const QStringList &filenames, int newInterval,
-                                qsizetype index, QSize size) {
+                                qsizetype index, const QSize &size) {
     if (index < 0) {
         index = qMax(_model->frameCount() - 1, qsizetype(0));
     }
     Q_ASSERT(index < _model->frameCount());
 
-    QVector<GifData> frames;
-    for (auto &f : filenames) {
-        QImage img;
-        if (img.load(f)) {
-            GifData d;
-            d.delay = newInterval;
-            d.image = img;
-            frames.append(d);
-        }
-    }
+    // QVector<GifData> frames;
+    // // for (auto &f : filenames) {
+    // //     QImage img;
+    // //     if (img.load(f)) {
+    // //         GifData d;
+    // //         d.delay = newInterval;
+    // //         d.image = img;
+    // //         frames.append(d);
+    // //     }
+    // // }
 
-    if (frames.isEmpty()) {
-        return false;
-    }
+    // if (frames.isEmpty()) {
+    //     return false;
+    // }
 
-    auto oimg = frames.first().image;
-    auto osize = size == QSize() ? oimg.size() : size;
+    // auto oimg = frames.first().image;
+    // auto osize = size == QSize() ? oimg.size() : size;
 
-    if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
-        osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
-    }
+    // if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
+    //     osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
+    // }
 
-    frames.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
+    // frames.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
 
-    undo.push(new InsertFrameCommand(_model, index, frames));
+    // undo.push(new InsertFrameCommand(_model, index, frames));
 
     return true;
 }
 
-bool MainWindow::loadfromGifs(QStringList gifs, qsizetype index, QSize size) {
-    QVector<GifData> datas;
-    for (auto &gif : gifs) {
-        GifReader reader;
-        if (reader.load(gif)) {
-            for (int i = 0; i < reader.imageCount(); ++i) {
-                GifData d;
-                d.image = reader.image(i);
-                d.delay = reader.delay(i);
-                datas.append(d);
-            }
-        }
-    }
+bool MainWindow::loadfromGifs(const QStringList &gifs, qsizetype index,
+                              const QSize &size) {
+    // QVector<GifData> datas;
+    // for (auto &gif : gifs) {
+    //     GifReader reader;
+    //     if (reader.load(gif)) {
+    //         for (int i = 0; i < reader.imageCount(); ++i) {
+    //             GifData d;
+    //             d.image = reader.image(i);
+    //             d.delay = reader.delay(i);
+    //             datas.append(d);
+    //         }
+    //     }
+    // }
 
-    if (datas.isEmpty()) {
-        return false;
-    }
+    // if (datas.isEmpty()) {
+    //     return false;
+    // }
 
-    auto oimg = datas.first().image;
-    auto osize = size == QSize() ? oimg.size() : size;
+    // auto oimg = datas.first().image;
+    // auto osize = size == QSize() ? oimg.size() : size;
 
-    if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
-        osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
-    }
+    // if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
+    //     osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
+    // }
 
-    datas.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
-    undo.push(new InsertFrameCommand(_model, index, datas));
+    // datas.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
+    // undo.push(new InsertFrameCommand(_model, index, datas));
 
     return true;
 }
@@ -1314,6 +1180,14 @@ void MainWindow::updatePlayState() {
     }
 }
 
+QVector<int> MainWindow::getSelectedIndices() const {
+    QVector<int> indices;
+    for (auto &item : _gallery->selectionModel()->selectedIndexes()) {
+        indices.append(item.row());
+    }
+    return indices;
+}
+
 void MainWindow::loadCacheIcon() {
     _infoSaved = ICONRES(QStringLiteral("saved"));
     _infoUnsaved = ICONRES(QStringLiteral("unsaved"));
@@ -1344,6 +1218,7 @@ int MainWindow::getNewFrameInterval() {
 void MainWindow::closeEvent(QCloseEvent *event) {
     _player->stop();
     if (ensureSafeClose()) {
+        _model->clearData();
         auto &set = SettingManager::instance();
         set.setRecentFiles(m_recentmanager->saveRecent());
         set.save();

@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,22 +18,21 @@
 #ifndef REMOVEFRAMECOMMAND_H
 #define REMOVEFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QMap>
-#include <QUndoCommand>
+#include "undocommand.h"
 
-class RemoveFrameCommand : public QUndoCommand {
+class RemoveFrameCommand : public UndoCommand {
 public:
-    RemoveFrameCommand(GifContentModel *helper, QVector<int> &frames,
-                       QUndoCommand *parent = nullptr);
+    explicit RemoveFrameCommand(GifContentModel *model,
+                                const QVector<int> &findices,
+                                QUndoCommand *parent = nullptr);
 
+public:
     void undo() override;
     void redo() override;
 
 protected:
-    GifContentModel *gif;
-    QVector<int> indices;
-    QVector<GifData> imgs;
+    QVector<int> _indices;
+    QVector<QSharedPointer<GifFrame>> imgs;
 };
 
 #endif // REMOVEFRAMECOMMAND_H

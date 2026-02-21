@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,13 +18,18 @@
 #include "moveframecommand.h"
 
 MoveFrameCommand::MoveFrameCommand(
-    GifContentModel *helper, GifContentModel::MoveFrameDirection direction,
+    GifContentModel *model, GifContentModel::MoveFrameDirection direction,
     const QVector<int> &indices, QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper), dir(direction), oldindices(indices) {
+    : UndoCommand(model, parent), dir(direction), oldindices(indices) {
+    if (oldindices.isEmpty()) {
+        setObsolete(true);
+        return;
+    }
     std::sort(oldindices.begin(), oldindices.end());
 }
 
 void MoveFrameCommand::undo() {
+    auto gif = model();
     auto lv = gif->linkedListView();
     if (!lv || !lv->selectionModel()) {
         return;
@@ -69,6 +74,7 @@ void MoveFrameCommand::undo() {
 }
 
 void MoveFrameCommand::redo() {
+    auto gif = model();
     auto lv = gif->linkedListView();
     if (!lv || !lv->selectionModel()) {
         return;

@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,22 +18,20 @@
 #ifndef MOVEFRAMECOMMAND_H
 #define MOVEFRAMECOMMAND_H
 
-#include "class/gifcontentmodel.h"
-#include <QListWidget>
-#include <QUndoCommand>
+#include "undocommand.h"
 
-class MoveFrameCommand : public QUndoCommand {
+class MoveFrameCommand : public UndoCommand {
 public:
-    MoveFrameCommand(GifContentModel *helper,
-                     GifContentModel::MoveFrameDirection direction,
-                     const QVector<int> &indices,
-                     QUndoCommand *parent = nullptr);
+    explicit MoveFrameCommand(GifContentModel *model,
+                              GifContentModel::MoveFrameDirection direction,
+                              const QVector<int> &indices,
+                              QUndoCommand *parent = nullptr);
 
+public:
     void undo() override;
     void redo() override;
 
 protected:
-    GifContentModel *gif;
     GifContentModel::MoveFrameDirection dir;
     QVector<int> oldindices;
 };

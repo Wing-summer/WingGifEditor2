@@ -19,17 +19,19 @@
 
 PlayGifManager::PlayGifManager(QObject *parent) : QObject(parent) {}
 
-void PlayGifManager::setTickIntervals(const QVector<int> &intervals) {
-    m_intervals = intervals;
+void PlayGifManager::setTickIntervals(
+    const std::function<int(qsizetype)> &delegent) {
+    _delegent = delegent;
 }
 
 void PlayGifManager::play(int index) {
-    if (index < 0 || index >= m_intervals.count())
+    if (!_delegent) {
         return;
+    }
     curpos = index;
     _isContinue = true;
     emit playStateChanged();
-    QTimer::singleShot(m_intervals.at(curpos), this, &PlayGifManager::tick_p);
+    QTimer::singleShot(_delegent(curpos), this, &PlayGifManager::tick_p);
 }
 
 void PlayGifManager::stop() { _isContinue = false; }
@@ -38,12 +40,11 @@ bool PlayGifManager::isPlaying() const { return _isContinue; }
 
 void PlayGifManager::tick_p() {
     emit tick(curpos++);
-    if (curpos >= m_intervals.count()) {
+    if (_delegent(curpos) < 0) {
         curpos = 0;
     }
     if (_isContinue) {
-        QTimer::singleShot(m_intervals.at(curpos), this,
-                           &PlayGifManager::tick_p);
+        QTimer::singleShot(_delegent(curpos), this, &PlayGifManager::tick_p);
     } else {
         emit playStateChanged();
     }

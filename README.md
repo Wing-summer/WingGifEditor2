@@ -70,13 +70,7 @@
 
 <p align="center">
 
-<img alt="支付宝" src="支付宝捐助.jpg" height=50% width=50%>
-<p align="center">感谢支持</p>
-
-</p>
-
-<p align="center">
-<img alt="微信" src="微信捐助.png" height=50% width=50%>
+<img src="Donate.jpg" />
 <p align="center">感谢支持</p>
 
 </p>
@@ -85,7 +79,3 @@
 
 - Github : <https://github.com/Wing-summer/WingGifEditor2>
 - Gitee : <https://gitee.com/wing-cloud/WingGifEditor2>
-
-## WIKI
-
-&emsp;&emsp;点击 [此链接](https://github.com/Wing-summer/WingGifEditor2/wiki) 来进行学习使用，可视化的编辑 GIF 。

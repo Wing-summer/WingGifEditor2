@@ -299,33 +299,14 @@ private:
     };
 
 public:
-    explicit GifWriter(int width, int height,
-                       const QString &filename = QString(),
+    explicit GifWriter(const QString &filename = QString(),
                        QObject *parent = nullptr);
 
-    void push(const QImage &img, int delay);
-
-    bool pushRange(const QVector<QImage> &imgs, const QVector<int> &delays);
-
-    bool setDelay(qsizetype index, int delay);
-
-    bool setImage(qsizetype index, const QImage &img);
-
-    int delay(qsizetype index) const;
-
-    QImage image(qsizetype index) const;
-
-    bool save(const QString &filename = QString(), unsigned int loopCount = 0);
-
-    bool saveLazy(const QString &filename, unsigned int loopCount,
-                  qsizetype frameCount, const QVector<int> &delays,
-                  const std::function<QImage(qsizetype)> &frameProvider);
+    bool
+    save(const QString &filename, unsigned int loopCount, qsizetype frameCount,
+         const std::function<QPair<int, QImage>(qsizetype)> &frameProvider);
 
     void clear();
-
-    void setAspectRatioMode(Qt::AspectRatioMode mode);
-
-    Qt::AspectRatioMode aspectRatioMode() const;
 
     QString extString() const;
 
@@ -350,16 +331,7 @@ private:
 
 private:
     QString m_filename;
-
-    QString m_extString;
-
-    QVector<int> m_delays;
-    QVector<QImage> m_data;
-
-    int m_width;
-    int m_height;
-
-    Qt::AspectRatioMode m_mode = Qt::AspectRatioMode::IgnoreAspectRatio;
+    QByteArray m_extString;
 };
 
 #endif // GIFWRITER_H

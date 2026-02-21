@@ -85,6 +85,9 @@ private:
 
         a->setMenu(menu);
         if (menu) {
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 0)
+            a->setArrowType(Qt::DownArrow);
+#endif
             a->setPopupMode(QToolButton::InstantPopup);
         }
         connect(a, &QToolButton::clicked, this, slot);
@@ -130,8 +133,7 @@ private:
     void buildUpRibbonBar();
 
 private slots:
-    void on_new_frompics();
-    void on_new_fromgifs();
+    void on_new();
     void on_open();
     void on_save();
     void on_saveas();
@@ -175,8 +177,6 @@ private slots:
     void on_flipv();
     void on_clockwise();
     void on_anticlockwise();
-    void on_exportapply();
-    void on_applypic();
 
     void on_fullscreen();
     void on_about();
@@ -195,10 +195,10 @@ private:
     bool writeGif(const QString &gif, unsigned int loopCount = 0,
                   const QString &comment = QString());
     bool exportGifFrames(const QString &dirPath, const char *ext);
-    bool loadfromImages(const QStringList &filenames, int newInterval,
-                        qsizetype index = 0, QSize size = QSize());
-    bool loadfromGifs(QStringList gifs, qsizetype index = 0,
-                      QSize size = QSize());
+    bool loadfromImages(const QStringList &filenames, int defaultDelay,
+                        qsizetype index = 0, const QSize &size = QSize());
+    bool loadfromGifs(const QStringList &gifs, qsizetype index,
+                      const QSize &size);
 
     void setSaved(bool b);
 
@@ -209,8 +209,8 @@ private:
     void setEditModeEnabled(bool b);
     void updatePlayState();
 
+    QVector<int> getSelectedIndices() const;
     void loadCacheIcon();
-
     void updateGifMessage();
 
     int getNewFrameInterval();
@@ -228,7 +228,6 @@ private:
     GifContentGallery *_gallery = nullptr;
     QString _curfilename;
     QString _lastusedpath;
-    QString _comment;
 
     QMenu *m_recentMenu = nullptr;
     RecentFileManager *m_recentmanager = nullptr;

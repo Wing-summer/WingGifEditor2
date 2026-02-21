@@ -20,7 +20,6 @@
 #include <QPainter>
 
 const unsigned int BANNER_HEIGHT = 20;
-const unsigned int BANNER_ALPHA = 200;
 const unsigned int HIGHLIGHT_ALPHA = 100;
 
 PictureDelegate::PictureDelegate(QObject *parent)
@@ -32,7 +31,9 @@ void PictureDelegate::paint(QPainter *painter,
     painter->save();
 
     auto img = index.model()->data(index, Qt::DecorationRole).value<QImage>();
-    auto size = img.size().scaled(option.rect.size(), Qt::KeepAspectRatio);
+    auto size = img.size().scaled(option.rect.width(),
+                                  option.rect.height() - BANNER_HEIGHT * 2,
+                                  Qt::KeepAspectRatio);
 
     painter->drawImage(
         QPoint(option.rect.left() + (option.rect.width() - size.width()) / 2,
@@ -45,7 +46,6 @@ void PictureDelegate::paint(QPainter *painter,
     bannerRectBottom.moveBottom(option.rect.bottom());
 
     QColor bannerColor = this->bannerColor;
-    bannerColor.setAlpha(BANNER_ALPHA);
     painter->fillRect(bannerRectTop, bannerColor);
     painter->fillRect(bannerRectBottom, bannerColor);
 

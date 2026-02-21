@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2026-2029 WingSummer
+** Copyright (C) 2024-2027 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -15,23 +15,43 @@
 ** =============================================================================
 */
 
-#ifndef CROPIMAGECOMMAND_H
-#define CROPIMAGECOMMAND_H
+#ifndef QTLOCKEDFILE_H
+#define QTLOCKEDFILE_H
 
-#include "undocommand.h"
+#include <QFile>
 
-class CropImageCommand : public UndoCommand {
+#ifdef Q_OS_WIN
+#include <QVector>
+#endif
+
+class QtLockedFile : public QFile {
+    Q_OBJECT
+
 public:
-    explicit CropImageCommand(GifContentModel *model, const QRect &rect,
-                              QUndoCommand *parent = nullptr);
+    enum LockMode { NoLock = 0, ReadLock, WriteLock };
 
-public:
-    void undo() override;
-    void redo() override;
+    QtLockedFile();
+    QtLockedFile(const QString &name);
+    ~QtLockedFile();
+
+    bool open(OpenMode mode);
+
+    bool lock(LockMode mode, bool block = true);
+    bool unlock();
+    bool isLocked() const;
+    LockMode lockMode() const;
 
 private:
-    QRect _rect;
-    GifContentModel::Result _cached;
+#ifdef Q_OS_WIN
+    Qt::HANDLE wmutex;
+    Qt::HANDLE rmutex;
+    QVector<Qt::HANDLE> rmutexes;
+    QString mutexname;
+
+    Qt::HANDLE getMutexHandle(int idx, bool doCreate);
+    bool waitMutex(Qt::HANDLE mutex, bool doBlock);
+#endif
+    LockMode m_lock_mode;
 };
 
-#endif // CROPIMAGECOMMAND_H
+#endif

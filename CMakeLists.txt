@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(WingGifEditor2 LANGUAGES CXX)
 
-set(PROJECT_VERSION 1.0.1)
+set(PROJECT_VERSION 1.1.0)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -12,8 +12,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
+
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.10.0)
+    set(QT_CREATOR_SKIP_MAINTENANCE_TOOL_PROVIDER ON)
+    set(QT_NO_PRIVATE_MODULE_WARNING ON)
+    find_package(Qt6 REQUIRED GuiPrivate CorePrivate WidgetsPrivate)
+endif()
 
 add_definitions(-DWINGGIF_VERSION="${PROJECT_VERSION}"
                 -DAPP_ORG="WingCloudStudio" -DAPP_NAME="${PROJECT_NAME}")
@@ -64,8 +69,7 @@ set(RIBBON_SRC
 set(QPATHEDIT_SRC 3rdparty/QPathEdit/qpathedit.cpp
                   3rdparty/QPathEdit/qpathedit.h)
 
-set(PROJECT_SOURCES
-    src/main.cpp
+set(DIALOG_SRC
     src/dialog/mainwindow.cpp
     src/dialog/mainwindow.h
     src/dialog/framelessdialogbase.cpp
@@ -92,15 +96,17 @@ set(PROJECT_SOURCES
     src/dialog/gifsavedialog.h
     src/dialog/gifsavedialog.cpp
     src/dialog/logdialog.h
-    src/dialog/logdialog.cpp
+    src/dialog/logdialog.cpp)
+
+set(CLS_SRC
     src/class/appmanager.cpp
     src/class/appmanager.h
     src/class/clipboardhelper.cpp
     src/class/clipboardhelper.h
     src/class/languagemanager.cpp
     src/class/languagemanager.h
-    src/class/gifreader.h
-    src/class/gifreader.cpp
+    src/class/giffile.h
+    src/class/giffile.cpp
     src/class/gifwriter.h
     src/class/gifwriter.cpp
     src/class/gifcontentmodel.h
@@ -111,7 +117,7 @@ set(PROJECT_SOURCES
     src/class/qkeysequences.cpp
     src/class/recentfilemanager.cpp
     src/class/recentfilemanager.h
-    src/class/setting.h
+    src/class/settings.h
     src/class/eventfilter.h
     src/class/skinmanager.cpp
     src/class/skinmanager.h
@@ -127,8 +133,14 @@ set(PROJECT_SOURCES
     src/class/settingmanager.h
     src/class/logger.cpp
     src/class/logger.h
+    src/class/qtlockedfile.h
+    src/class/qtlockedfile.cpp
+    src/class/gifframe.h
+    src/class/gifframe.cpp
     src/class/waitingloop.h
-    src/class/waitingloop.cpp
+    src/class/waitingloop.cpp)
+
+set(CONTORL_SRC
     src/control/gifcontentgallery.h
     src/control/gifcontentgallery.cpp
     src/control/toast.cpp
@@ -140,7 +152,11 @@ set(PROJECT_SOURCES
     src/control/gifeditor.cpp
     src/control/gifeditor.h
     src/control/gifeditorscene.cpp
-    src/control/gifeditorscene.h
+    src/control/gifeditorscene.h)
+
+set(CMD_SRC
+    src/command/undocommand.h
+    src/command/undocommand.cpp
     src/command/cropimagecommand.cpp
     src/command/cropimagecommand.h
     src/command/delayframecommand.cpp
@@ -164,13 +180,20 @@ set(PROJECT_SOURCES
     src/command/rotateframecommand.cpp
     src/command/rotateframecommand.h
     src/command/scaleframecommand.cpp
-    src/command/scaleframecommand.h
-    src/settings/pluginsettingdialog.cpp
-    src/settings/pluginsettingdialog.h
-    src/settings/pluginsettingdialog.ui
-    src/settings/editorsettingdialog.cpp
-    src/settings/editorsettingdialog.h
-    src/settings/editorsettingdialog.ui
+    src/command/scaleframecommand.h)
+
+set(SET_SRC
+    src/settings/pluginsettingdialog.cpp src/settings/pluginsettingdialog.h
+    src/settings/pluginsettingdialog.ui src/settings/editorsettingdialog.cpp
+    src/settings/editorsettingdialog.h src/settings/editorsettingdialog.ui)
+
+set(PROJECT_SOURCES
+    src/main.cpp
+    ${DIALOG_SRC}
+    ${CLS_SRC}
+    ${CONTORL_SRC}
+    ${SET_SRC}
+    ${CMD_SRC}
     src/plugin/iwingplugin.h
     src/plugin/pluginsystem.h
     src/plugin/pluginsystem.cpp
@@ -191,41 +214,16 @@ file(MAKE_DIRECTORY ${QM_OUTPUT_DIR})
 set_source_files_properties(${TRANSLATION_FILES} PROPERTIES OUTPUT_LOCATION
                                                             "lang")
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt6_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src
-                           ${TRANSLATION_FILES})
-else()
-    qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src
-                           ${TRANSLATION_FILES})
-endif()
+qt6_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src ${TRANSLATION_FILES}
+                       OPTIONS -no-obsolete)
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    if(WIN32)
-        set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/favicon.rc")
-        qt_add_executable(WingGifEditor2 MANUAL_FINALIZATION ${PROJECT_SOURCES}
-                          ${QM_FILES} ${app_icon_resource_windows})
-    else()
-        qt_add_executable(WingGifEditor2 MANUAL_FINALIZATION ${PROJECT_SOURCES}
-                          ${QM_FILES})
-    endif()
-
-    # Define target properties for Android with Qt 6 as: set_property(TARGET
-    # WingGifEditor2 APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-    # ${CMAKE_CURRENT_SOURCE_DIR}/android) For more information, see
-    # https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
+if(WIN32)
+    set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/favicon.rc")
+    qt_add_executable(WingGifEditor2 MANUAL_FINALIZATION ${PROJECT_SOURCES}
+                      ${QM_FILES} ${app_icon_resource_windows})
 else()
-    if(ANDROID)
-        message(FATAL_ERROR "Not supported for Android!")
-    else()
-        if(WIN32)
-            set(app_icon_resource_windows
-                "${CMAKE_CURRENT_SOURCE_DIR}/favicon.rc")
-            add_executable(WingGifEditor2 ${PROJECT_SOURCES} ${QM_FILES}
-                                          ${app_icon_resource_windows})
-        else()
-            add_executable(WingGifEditor2 ${PROJECT_SOURCES} ${QM_FILES})
-        endif()
-    endif()
+    qt_add_executable(WingGifEditor2 MANUAL_FINALIZATION ${PROJECT_SOURCES}
+                      ${QM_FILES})
 endif()
 
 target_include_directories(
@@ -234,21 +232,21 @@ target_include_directories(
 
 if(WINGGIF_USE_FRAMELESS)
     target_link_libraries(
-        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Concurrent gif_object_lib
-                               QWKCore QWKWidgets OpenMP::OpenMP_CXX)
+        WingGifEditor2 PRIVATE Qt6::Widgets Qt6::Concurrent gif_object_lib
+                               QWKCore QWKWidgets)
 else()
-    target_link_libraries(
-        WingGifEditor2 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Concurrent gif_object_lib
-                               OpenMP::OpenMP_CXX)
+    target_link_libraries(WingGifEditor2 PRIVATE Qt6::Widgets Qt6::Concurrent
+                                                 gif_object_lib)
 endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1. If
 # you are developing for iOS or macOS you should consider setting an explicit,
 # fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
+if(Qt6_VERSION VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER
                          com.example.WingGifEditor2)
 endif()
+
 set_target_properties(
     WingGifEditor2
     PROPERTIES ${BUNDLE_ID_OPTION} MACOSX_BUNDLE_BUNDLE_VERSION
@@ -257,6 +255,4 @@ set_target_properties(
                TRUE WIN32_EXECUTABLE
                TRUE)
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(WingGifEditor2)
-endif()
+qt_finalize_executable(WingGifEditor2)

@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,101 +17,47 @@
 
 #include "delframedircommand.h"
 
-#include <QDir>
-#include <utility>
-
-DelFrameDirCommand::DelFrameDirCommand(GifContentModel *helper, int index,
+DelFrameDirCommand::DelFrameDirCommand(GifContentModel *model, int index,
                                        DelDirection dir, QUndoCommand *parent)
-    : QUndoCommand(parent), gif(helper), oldindex(index), olddir(dir) {
-    bufferDir = std::make_unique<QTemporaryDir>();
-    if (!bufferDir->isValid()) {
-        bufferDir.reset();
-        return;
-    }
-
-    const auto delays = helper->delays();
-    const auto count = helper->frameCount();
-
-    qsizetype start = 0;
-    qsizetype end = 0;
-    if (olddir == DelDirection::Before) {
-        start = 0;
-        end = qBound<qsizetype>(0, index, count);
-    } else {
-        start = qBound<qsizetype>(0, index + 1, count);
-        end = count;
-    }
-
-    oldimgFiles.reserve(end - start);
-    olddelays.reserve(end - start);
-    for (qsizetype i = start; i < end; ++i) {
-        const auto path = bufferDir->path() + QDir::separator() +
-                          QStringLiteral("deldir_%1.png").arg(i, 6, 10, QLatin1Char('0'));
-        helper->image(i).save(path, "PNG");
-        oldimgFiles.push_back(path);
-        olddelays.push_back(delays.at(i));
-    }
+    : UndoCommand(model, parent), _oldindex(index), _olddir(dir) {
+    Q_ASSERT(index >= 0 && index < model->frameCount());
 }
 
 void DelFrameDirCommand::undo() {
-    if (!gif || oldimgFiles.isEmpty()) {
-        return;
-    }
+    auto gif = model();
 
-    QVector<QImage> oldimgs;
-    oldimgs.reserve(oldimgFiles.size());
-    for (const auto &path : std::as_const(oldimgFiles)) {
-        QImage img;
-        img.load(path);
-        if (!img.isNull()) {
-            oldimgs.push_back(img);
-        }
-    }
-    if (oldimgs.size() != olddelays.size()) {
-        return;
-    }
-
-    switch (olddir) {
+    switch (_olddir) {
     case DelDirection::Before:
-        gif->insertFrames(oldimgs, olddelays, 0);
+        gif->insertFrames(0, _data);
         break;
     case DelDirection::After:
-        gif->insertFrames(oldimgs, olddelays, -1);
+        gif->insertFrames(gif->frameCount(), _data);
         break;
     }
 
     if (auto lv = gif->linkedListView()) {
         lv->clearSelection();
-        const auto target = qBound(0, oldindex, static_cast<int>(gif->frameCount() - 1));
-        if (target >= 0) {
-            lv->setCurrentIndex(gif->index(target));
-        }
+        lv->setCurrentIndex(gif->index(_oldindex));
     }
 }
 
 void DelFrameDirCommand::redo() {
-    if (!gif || gif->frameCount() == 0) {
-        return;
-    }
+    auto gif = model();
 
-    switch (olddir) {
+    switch (_olddir) {
     case DelDirection::Before:
-        if (oldindex > 0) {
-            gif->removeFrames(0, oldindex);
-        }
+        _data = gif->removeFrames(0, _oldindex);
         break;
     case DelDirection::After:
-        if (oldindex + 1 < gif->frameCount()) {
-            gif->removeFrames(oldindex + 1, -1);
-        }
+        _data = gif->removeFrames(_oldindex + 1, -1);
         break;
     }
 
     if (auto lv = gif->linkedListView()) {
         lv->clearSelection();
+
         if (gif->frameCount() > 0) {
-            const auto target = qBound(0, oldindex,
-                                       static_cast<int>(gif->frameCount() - 1));
+            const auto target = _olddir == DelDirection::Before ? 0 : _oldindex;
             lv->setCurrentIndex(gif->index(target));
         }
     }

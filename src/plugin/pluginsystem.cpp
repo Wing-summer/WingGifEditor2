@@ -54,7 +54,6 @@ void PluginSystem::LoadPlugin() {
 #ifdef QT_DEBUG
     QDir plugindir(QCoreApplication::applicationDirPath() +
                    QStringLiteral("/plugin"));
-    // 这是我的插件调试目录，如果调试插件，请更换路径
 #ifdef Q_OS_WIN
     plugindir.setNameFilters({"*.dll", "*.wingplg"});
 #else
@@ -231,7 +230,7 @@ void PluginSystem::loadPlugin(const QFileInfo &fileinfo) {
                 loader.unload();
             }
         }
-        Logger::_log("");
+        Logger::newLine();
     }
 }
 
@@ -330,7 +329,8 @@ void PluginSystem::connectBaseInterface(IWingPlugin *plg) {
     });
     connect(plg, &IWingPlugin::addFrame, this,
             [=](qsizetype index, const QImage &frame, int delay) -> bool {
-                return _win->_model->insertFrame(frame, delay, index);
+                // return _win->_model->insertFrame(frame, delay, index);
+                return true;
             });
     connect(plg, &IWingPlugin::removeFrame, this,
             [=](qsizetype index, qsizetype count) {
@@ -349,7 +349,8 @@ void PluginSystem::connectBaseInterface(IWingPlugin *plg) {
             });
     connect(plg, &IWingPlugin::replaceFrame, this,
             [=](qsizetype index, const QImage &image) {
-                return _win->_model->setFrameImage(index, image);
+                // return _win->_model->setFrameImage(index, image);
+                return true;
             });
     connect(plg, &IWingPlugin::frameCount, this,
             [=]() -> qsizetype { return _win->_model->frameCount(); });

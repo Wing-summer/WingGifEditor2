@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -53,6 +53,9 @@ public:
     bool useNativeTitleBar() const;
     void setUseNativeTitleBar(bool newUseNativeTitleBar);
 
+    qsizetype logCount() const;
+    void setLogCount(qsizetype newLogCount);
+
 private:
     SettingManager();
 
@@ -67,7 +70,7 @@ private:
     Qt::WindowState m_defaultWinState = Qt::WindowMaximized;
 
     QString m_lastUsedPath;
-
+    qsizetype m_logCount = 20;
     bool m_useNativeTitleBar = false;
 };
 

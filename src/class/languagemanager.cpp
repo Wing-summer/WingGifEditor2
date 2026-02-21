@@ -53,12 +53,7 @@ LanguageManager::LanguageManager() {
     _defaultLocale = QLocale::system();
 
     if (m_langs.isEmpty()) {
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-        if (QLocale::China == _defaultLocale.territory()
-#else
-        if (QLocale::China == _defaultLocale.country()
-#endif
-        ) {
+        if (QLocale::China == _defaultLocale.territory()) {
             QMessageBox::critical(
                 nullptr, QStringLiteral("程序损坏"),
                 QStringLiteral(
@@ -75,11 +70,7 @@ LanguageManager::LanguageManager() {
 
     bool found = false;
     for (auto p = m_localeMap.begin(); p != m_localeMap.end(); ++p) {
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
         if (p->territory() == _defaultLocale.territory() &&
-#else
-        if (p->country() == _defaultLocale.country() &&
-#endif
             p->language() == _defaultLocale.language() &&
             p->script() == _defaultLocale.script()) {
             found = true;
