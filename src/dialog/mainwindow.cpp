@@ -58,7 +58,6 @@
 #include "dialog/reduceframedialog.h"
 #include "dialog/scalegifdialog.h"
 #include "settings/editorsettingdialog.h"
-#include "settings/pluginsettingdialog.h"
 
 #include <QCloseEvent>
 #include <QFileDialog>
@@ -108,7 +107,6 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
                 auto i = current.row();
                 auto img = _model->image(i);
                 auto delay = _model->delay(i);
-                PluginSystem::instance().callPluginProcess(img, delay, i);
                 _editor->setImage(img);
                 updateGifMessage();
             });
@@ -176,9 +174,6 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
 
     _cuttingdlg = new CropGifDialog(this);
 
-    auto w = qApp->primaryScreen()->availableSize().width();
-    _cuttingdlg->move(w - _cuttingdlg->width(), 0);
-
     connect(_cuttingdlg, &CropGifDialog::selRectChanged, _editor,
             &GifEditor::setSelRect);
     connect(_cuttingdlg, &CropGifDialog::crop, this,
@@ -201,10 +196,6 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     auto &log = Logger::instance();
     log.setLogLevel(Logger::Level::q5TRACE);
     connect(&log, &Logger::log, _logdialog, &LogDialog::log);
-
-    auto &plg = PluginSystem::instance();
-    plg.setMainWindow(this);
-    plg.LoadPlugin();
 
     setEditModeEnabled(false);
 
@@ -243,8 +234,6 @@ void MainWindow::buildUpRibbonBar() {
     m_editStateWidgets << a;
     _playDisWidgets << a;
     m_editStateWidgets << buildViewPage(m_ribbon->addTab(tr("View")));
-    ribbonPlg = buildPluginPage(m_ribbon->addTab(tr("Plugin")));
-    _playDisWidgets << ribbonPlg;
     ribbonSetting = buildSettingPage(m_ribbon->addTab(tr("Setting")));
     _playDisWidgets << ribbonSetting;
     _playDisWidgets << buildAboutPage(m_ribbon->addTab(tr("About")));
@@ -953,13 +942,6 @@ RibbonTabContent *MainWindow::buildViewPage(RibbonTabContent *tab) {
     return tab;
 }
 
-RibbonTabContent *MainWindow::buildPluginPage(RibbonTabContent *tab) {
-    auto pannel = tab->addGroup(tr("Info"));
-    addPannelAction(pannel, QStringLiteral("plugin"), tr("PlgInfo"),
-                    [=] { PluginSettingDialog().exec(); });
-    return tab;
-}
-
 RibbonTabContent *MainWindow::buildSettingPage(RibbonTabContent *tab) {
     auto pannel = tab->addGroup(tr("General"));
     addPannelAction(pannel, QStringLiteral("setting"), tr("Settings"),
@@ -1058,7 +1040,8 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
         std::iota(indices.begin(), indices.end(), 0);
 
         QtConcurrent::blockingMap(indices, [this, &dir, ext](int i) {
-            _model->image(i).save(dir.absoluteFilePath(QString::number(i)), ext);
+            _model->image(i).save(dir.absoluteFilePath(QString::number(i)),
+                                  ext);
         });
     }
 

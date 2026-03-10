@@ -28,7 +28,6 @@
 #include "dialog/cropgifdialog.h"
 #include "dialog/framelessmainwindow.h"
 #include "dialog/logdialog.h"
-#include "plugin/pluginsystem.h"
 #include "utilities.h"
 
 #include <QMainWindow>
@@ -187,7 +186,6 @@ private:
     RibbonTabContent *buildFilePage(RibbonTabContent *tab);
     RibbonTabContent *buildEditPage(RibbonTabContent *tab);
     RibbonTabContent *buildViewPage(RibbonTabContent *tab);
-    RibbonTabContent *buildPluginPage(RibbonTabContent *tab);
     RibbonTabContent *buildSettingPage(RibbonTabContent *tab);
     RibbonTabContent *buildAboutPage(RibbonTabContent *tab);
 
@@ -235,7 +233,6 @@ private:
     CropGifDialog *_cuttingdlg;
     LogDialog *_logdialog;
 
-    RibbonTabContent *ribbonPlg = nullptr;
     RibbonTabContent *ribbonSetting = nullptr;
 
     QToolButton *_btnPlayerStop = nullptr;

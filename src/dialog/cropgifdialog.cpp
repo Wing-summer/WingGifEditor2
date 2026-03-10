@@ -16,6 +16,7 @@
 */
 
 #include "cropgifdialog.h"
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 
@@ -23,43 +24,35 @@ CropGifDialog::CropGifDialog(QWidget *parent) : FramelessDialogBase(parent) {
     setAttribute(Qt::WA_ShowWithoutActivating);
 
     auto widget = new QWidget(this);
-    auto layout = new QVBoxLayout(widget);
+    auto layout = new QFormLayout(widget);
+    layout->setHorizontalSpacing(8);
+    layout->setVerticalSpacing(10);
 
-    layout->addWidget(new QLabel(QStringLiteral("X : "), this));
-    layout->addSpacing(6);
     m_x = new QSpinBox(this);
     connect(m_x, &QSpinBox::editingFinished, this, [=] {
         m_w->setMaximum(m_max.width() - m_x->value());
         sigSelRectChanged();
     });
-    layout->addWidget(m_x);
-    layout->addSpacing(10);
-    layout->addWidget(new QLabel(QStringLiteral("Y : "), this));
-    layout->addSpacing(6);
+    layout->addRow(QStringLiteral("X"), m_x);
+
     m_y = new QSpinBox(this);
     connect(m_y, &QSpinBox::editingFinished, this, [=] {
         m_h->setMaximum(m_max.height() - m_y->value());
         sigSelRectChanged();
     });
-    layout->addWidget(m_y);
-    layout->addSpacing(10);
-    layout->addWidget(new QLabel(QStringLiteral("W : "), this));
-    layout->addSpacing(6);
+    layout->addRow(QStringLiteral("Y"), m_y);
+
     m_w = new QSpinBox(this);
     connect(m_w, &QSpinBox::editingFinished, this,
             [=] { sigSelRectChanged(); });
-    layout->addWidget(m_w);
-    layout->addSpacing(10);
-    layout->addWidget(new QLabel(QStringLiteral("H : "), this));
-    layout->addSpacing(6);
+    layout->addRow(QStringLiteral("W"), m_w);
+
     m_h = new QSpinBox(this);
     connect(m_h, &QSpinBox::editingFinished, this,
             [=] { sigSelRectChanged(); });
-    layout->addWidget(m_h);
-    layout->addSpacing(20);
+    layout->addRow(QStringLiteral("H"), m_h);
 
-    auto btnBox = new QWidget(this);
-    auto buttonLayout = new QHBoxLayout(btnBox);
+    auto buttonLayout = new QHBoxLayout;
     buttonLayout->setSpacing(0);
 
     int id = 0;
@@ -80,14 +73,13 @@ CropGifDialog::CropGifDialog(QWidget *parent) : FramelessDialogBase(parent) {
     });
     buttonLayout->addWidget(b);
 
-    layout->addWidget(btnBox);
+    layout->addRow(buttonLayout);
     setFocusPolicy(Qt::StrongFocus);
-
-    widget->setMinimumWidth(300);
-
+    widget->setMinimumWidth(280);
     buildUpContent(widget);
-
     setWindowTitle(tr("CropGifDialog"));
+
+    this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 void CropGifDialog::setMaxSize(QSize maxsize) {

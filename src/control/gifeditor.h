@@ -26,15 +26,10 @@
 class GifEditor : public QGraphicsView {
     Q_OBJECT
 public:
-    enum class DrawTool { None, Rectangle, Ellipse };
-
     GifEditor(const QImage &img, QWidget *parent = nullptr);
     void setImage(const QImage &img);
 
     QRectF selRect() const;
-
-    DrawTool drawTool() const;
-
 
 public slots:
     void setSelRect(int x, int y, int w, int h);
@@ -44,8 +39,6 @@ public slots:
 
     void setCropMode(bool b);
 
-    void setDrawTool(GifEditor::DrawTool tool);
-
     void zoomIn();
     void zoomOut();
     void setZoom(int value);
@@ -54,20 +47,12 @@ signals:
     void selRectChanged(QRectF rect);
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *event) override;
-    virtual void mouseMoveEvent(QMouseEvent *event) override;
-    virtual void mouseReleaseEvent(QMouseEvent *event) override;
     virtual void wheelEvent(QWheelEvent *event) override;
     virtual void leaveEvent(QEvent *event) override;
 
 private:
     GifEditorScene *scene;
-    QRubberBand *rubber;
 
-    QPoint tmppos;
-    QPointF drawStartPos;
-    QGraphicsItem *activeShape = nullptr;
-    DrawTool activeTool = DrawTool::None;
     bool iscut = true;
 };
 

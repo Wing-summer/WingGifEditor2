@@ -71,6 +71,8 @@ void FramelessDialogBase::buildUpContent(QWidget *content) {
 #ifdef QT_DEBUG
     m_isBuilt = true;
 #endif
+
+    adjustSize();
 }
 
 void FramelessDialogBase::showEvent(QShowEvent *event) {

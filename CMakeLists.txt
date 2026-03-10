@@ -183,9 +183,8 @@ set(CMD_SRC
     src/command/scaleframecommand.h)
 
 set(SET_SRC
-    src/settings/pluginsettingdialog.cpp src/settings/pluginsettingdialog.h
-    src/settings/pluginsettingdialog.ui src/settings/editorsettingdialog.cpp
-    src/settings/editorsettingdialog.h src/settings/editorsettingdialog.ui)
+    src/settings/editorsettingdialog.cpp src/settings/editorsettingdialog.h
+    src/settings/editorsettingdialog.ui)
 
 set(PROJECT_SOURCES
     src/main.cpp
@@ -194,16 +193,13 @@ set(PROJECT_SOURCES
     ${CONTORL_SRC}
     ${SET_SRC}
     ${CMD_SRC}
-    src/plugin/iwingplugin.h
-    src/plugin/pluginsystem.h
-    src/plugin/pluginsystem.cpp
     ${WIDGET_FRAME_SRC}
     ${QPATHEDIT_SRC}
     ${RIBBON_SRC}
     src/utilities.h
     src/dbghelper.h
-    theme/breeze.qrc
-    resources.qrc)
+    resources.qrc
+    theme/breeze.qrc)
 
 include_directories("${CMAKE_SOURCE_DIR}/src")
 
