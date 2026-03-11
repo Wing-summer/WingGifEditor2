@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -18,11 +18,10 @@
 #ifndef EXPORTDIALOG_H
 #define EXPORTDIALOG_H
 
-#include "QPathEdit/qpathedit.h"
 #include "framelessdialogbase.h"
 
 #include <QButtonGroup>
-#include <QDialog>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QObject>
 
@@ -47,7 +46,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
-    QPathEdit *folder;
+    QLineEdit *folder;
     QButtonGroup *btnbox;
 
     ExportResult res;

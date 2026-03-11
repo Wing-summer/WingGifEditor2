@@ -102,6 +102,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="cbNativeFileDialog">
+        <property name="text">
+         <string>UseNativeFileDialog</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -124,13 +131,6 @@
       </size>
      </property>
     </spacer>
-   </item>
-   <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Apply|QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok|QDialogButtonBox::StandardButton::RestoreDefaults</set>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

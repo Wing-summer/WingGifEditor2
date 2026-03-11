@@ -31,6 +31,7 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
     widget->setMinimumSize(400, 400);
     ui->setupUi(widget);
 
+    auto set = &SettingManager::instance();
     ui->cbLanguage->addItem(tr("SystemDefault"));
     ui->cbLanguage->addItems(LanguageManager::instance().langsDisplay());
 
@@ -38,11 +39,29 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
     for (int i = 0; i < e.keyCount(); ++i) {
         ui->cbTheme->addItem(SkinManager::tr(e.valueToKey(i)));
     }
+    connect(ui->cbTheme, &QComboBox::currentIndexChanged, set,
+            &SettingManager::setThemeID);
+
+    connect(ui->cbNativeTitile, &QCheckBox::toggled, set,
+            &SettingManager::setUseNativeTitleBar);
 
     ui->cbWinState->addItems({tr("Normal"), tr("Maximized"), tr("FullScreen")});
-
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, this,
-            &EditorSettingDialog::on_buttonBox_clicked);
+    connect(ui->cbWinState, &QComboBox::currentIndexChanged, this,
+            [](int index) {
+                Qt::WindowState state = Qt::WindowState::WindowMaximized;
+                switch (index) {
+                case 0:
+                    state = Qt::WindowState::WindowNoState;
+                    break;
+                case 1:
+                    state = Qt::WindowState::WindowMaximized;
+                    break;
+                default:
+                    state = Qt::WindowState::WindowFullScreen;
+                    break;
+                }
+                SettingManager::instance().setDefaultWinState(state);
+            });
 
     buildUpContent(widget);
 
@@ -54,8 +73,12 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
 EditorSettingDialog::~EditorSettingDialog() { delete ui; }
 
 void EditorSettingDialog::reload() {
-    auto &set = SettingManager::instance();
+    ui->cbLanguage->blockSignals(true);
+    ui->cbTheme->blockSignals(true);
+    ui->cbNativeTitile->blockSignals(true);
+    ui->cbWinState->blockSignals(true);
 
+    auto &set = SettingManager::instance();
     auto langs = LanguageManager::instance().langsDisplay();
     auto lang = set.defaultLang();
     if (lang.isEmpty()) {
@@ -85,39 +108,9 @@ void EditorSettingDialog::reload() {
     }
 
     ui->cbWinState->setCurrentIndex(s);
-}
 
-void EditorSettingDialog::on_buttonBox_clicked(QAbstractButton *button) {
-    if (button == ui->buttonBox->button(QDialogButtonBox::Ok) ||
-        button == ui->buttonBox->button(QDialogButtonBox::Apply)) {
-        auto &set = SettingManager::instance();
-        // TODO only one translation
-        // set.setDefaultLang(LanguageManager::instance().langsDisplay());
-        set.setThemeID(ui->cbTheme->currentIndex());
-        auto s = ui->cbWinState->currentIndex();
-        Qt::WindowState state;
-        switch (s) {
-        case 0:
-            state = Qt::WindowState::WindowNoState;
-            break;
-        case 1:
-            state = Qt::WindowState::WindowMaximized;
-            break;
-        default:
-            state = Qt::WindowState::WindowFullScreen;
-            break;
-        }
-        set.setDefaultWinState(state);
-        set.setUseNativeTitleBar(ui->cbNativeTitile->isChecked());
-        set.save();
-        if (button == ui->buttonBox->button(QDialogButtonBox::Ok)) {
-            done(1);
-        }
-    } else if (button == ui->buttonBox->button(QDialogButtonBox::Cancel)) {
-        done(0);
-    } else if (button ==
-               ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)) {
-        SettingManager::instance().reset();
-        reload();
-    }
+    ui->cbLanguage->blockSignals(false);
+    ui->cbTheme->blockSignals(false);
+    ui->cbNativeTitile->blockSignals(false);
+    ui->cbWinState->blockSignals(false);
 }

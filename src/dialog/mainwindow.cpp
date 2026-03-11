@@ -20,7 +20,6 @@
 #include <QtConcurrent/QtConcurrentMap>
 
 #include <QDesktopServices>
-#include <QSplitter>
 #include <QStatusBar>
 
 #include "QWingRibbon/ribbontabcontent.h"
@@ -33,6 +32,7 @@
 #include "class/qkeysequences.h"
 #include "class/settingmanager.h"
 #include "class/waitingloop.h"
+#include "class/wingfiledialog.h"
 #include "class/winginputdialog.h"
 #include "class/wingmessagebox.h"
 #include "command/cropimagecommand.h"
@@ -60,7 +60,6 @@
 #include "settings/editorsettingdialog.h"
 
 #include <QCloseEvent>
-#include <QFileDialog>
 #include <QPainter>
 
 constexpr auto EMPTY_FUNC = [] {};
@@ -87,13 +86,14 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     layout->setSpacing(0);
     layout->addWidget(q_check_ptr(m_ribbon));
 
-    auto splitter = new QSplitter(this);
-    splitter->setOrientation(Qt::Vertical);
+    _splitter = new QSplitter(this);
+    _splitter->setOrientation(Qt::Vertical);
 
     _editor = new GifEditor(QImage(NAMEICONRES("icon")), this);
-    splitter->addWidget(_editor);
+    _splitter->addWidget(_editor);
     _gallery = new GifContentGallery(this);
-    splitter->addWidget(_gallery);
+    _splitter->addWidget(_gallery);
+
     _model = new GifContentModel(_gallery);
     _model->setLinkedListView(_gallery);
     _model->setLinkedEditor(_editor);
@@ -115,7 +115,11 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     connect(_model, &QAbstractListModel::rowsRemoved, this,
             &MainWindow::updateGifMessage);
 
-    layout->addWidget(splitter, 1);
+    auto ldata = SettingManager::instance().editorLayout();
+    if (!ldata.isEmpty()) {
+        _splitter->restoreState(ldata);
+    }
+    layout->addWidget(_splitter, 1);
 
     m_status = new QStatusBar(this);
 
@@ -234,8 +238,7 @@ void MainWindow::buildUpRibbonBar() {
     m_editStateWidgets << a;
     _playDisWidgets << a;
     m_editStateWidgets << buildViewPage(m_ribbon->addTab(tr("View")));
-    ribbonSetting = buildSettingPage(m_ribbon->addTab(tr("Setting")));
-    _playDisWidgets << ribbonSetting;
+    _playDisWidgets << buildSettingPage(m_ribbon->addTab(tr("Setting")));
     _playDisWidgets << buildAboutPage(m_ribbon->addTab(tr("About")));
     connect(m_ribbon, &Ribbon::onDragDropFiles, this,
             [=](const QStringList &files) {
@@ -258,7 +261,7 @@ void MainWindow::buildUpRibbonBar() {
 void MainWindow::on_new() {
     _player->stop();
     if (ensureSafeClose()) {
-        NewDialog d(NewType::FromPics, this);
+        NewDialog d;
         if (d.exec()) {
             WaitingLoop dw(tr("NewFromPicsGif"));
             if (loadfromImages(d.getResult(), getNewFrameInterval())) {
@@ -276,12 +279,12 @@ void MainWindow::on_new() {
 void MainWindow::on_open() {
     _player->stop();
     if (ensureSafeClose()) {
-        auto filename = QFileDialog::getOpenFileName(
+        auto filename = WingFileDialog::getOpenFileName(
             this, tr("ChooseFile"), _lastusedpath, "gif (*.gif)");
         if (filename.isEmpty())
             return;
 
-        _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
+        _lastusedpath = Utilities::getAbsoluteDirPath(filename);
 
         openGif(filename);
     }
@@ -328,9 +331,9 @@ void MainWindow::on_saveas() {
         return;
     }
 
-    auto filename =
-        QFileDialog::getSaveFileName(this, tr("ChooseSaveFile"), _lastusedpath,
-                                     QStringLiteral("gif (*.gif)"));
+    auto filename = WingFileDialog::getSaveFileName(
+        this, tr("ChooseSaveFile"), _lastusedpath,
+        QStringLiteral("gif (*.gif)"));
     if (filename.isEmpty())
         return;
     _lastusedpath = QFileInfo(filename).absoluteDir().absolutePath();
@@ -537,7 +540,33 @@ void MainWindow::on_delafter() {
 
 void MainWindow::on_reverse() {
     _player->stop();
-    undo.push(new ReverseFrameCommand(_model, 0, _model->frameCount() - 1));
+
+    auto rs = getSelectedIndices();
+    if (rs.isEmpty()) {
+        return;
+    }
+    std::sort(rs.begin(), rs.end());
+    auto r = rs.first();
+
+    int start = rs.first();
+    int end = start;
+    if (rs.size() == 1) {
+        start = 0;
+        end = -1;
+    } else {
+        auto total = rs.size();
+        for (qsizetype i = 1; i < total; ++i) {
+            auto l = rs.at(i - 1);
+            auto r = rs.at(i);
+            if (l + 1 != r) {
+                return;
+            }
+            end = r;
+        }
+        end++;
+    }
+
+    undo.push(new ReverseFrameCommand(_model, start, end));
 }
 
 void MainWindow::on_moveleft() {
@@ -646,8 +675,8 @@ void MainWindow::on_insertpic() {
     _player->stop();
 
     auto filenames =
-        QFileDialog::getOpenFileNames(this, tr("ChooseFile"), _lastusedpath,
-                                      tr("Images (*.jpg *.tiff *.png)"));
+        WingFileDialog::getOpenFileNames(this, tr("ChooseFile"), _lastusedpath,
+                                         tr("Images (*.jpg *.tiff *.png)"));
     if (filenames.isEmpty())
         return;
     _lastusedpath = QFileInfo(filenames.first()).absoluteDir().absolutePath();
@@ -665,7 +694,7 @@ void MainWindow::on_insertpic() {
 void MainWindow::on_merge() {
     _player->stop();
 
-    auto filenames = QFileDialog::getOpenFileNames(
+    auto filenames = WingFileDialog::getOpenFileNames(
         this, tr("ChooseFile"), _lastusedpath, "gif (*.gif)");
     if (filenames.isEmpty())
         return;
@@ -1204,7 +1233,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
         _model->clearData();
         auto &set = SettingManager::instance();
         set.setRecentFiles(m_recentmanager->saveRecent());
-        set.save();
+        set.setEditorLayout(_splitter->saveState());
         event->accept();
     } else {
         event->ignore();

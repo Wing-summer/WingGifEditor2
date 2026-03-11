@@ -66,9 +66,6 @@ set(RIBBON_SRC
     3rdparty/QWingRibbon/ribbontabcontent.h
     3rdparty/QWingRibbon/ribbontabcontent.ui)
 
-set(QPATHEDIT_SRC 3rdparty/QPathEdit/qpathedit.cpp
-                  3rdparty/QPathEdit/qpathedit.h)
-
 set(DIALOG_SRC
     src/dialog/mainwindow.cpp
     src/dialog/mainwindow.h
@@ -127,6 +124,8 @@ set(CLS_SRC
     src/class/winginputdialog.h
     src/class/wingmessagebox.cpp
     src/class/wingmessagebox.h
+    src/class/wingfiledialog.cpp
+    src/class/wingfiledialog.h
     src/class/wingprogressdialog.cpp
     src/class/wingprogressdialog.h
     src/class/settingmanager.cpp
@@ -194,7 +193,6 @@ set(PROJECT_SOURCES
     ${SET_SRC}
     ${CMD_SRC}
     ${WIDGET_FRAME_SRC}
-    ${QPATHEDIT_SRC}
     ${RIBBON_SRC}
     src/utilities.h
     src/dbghelper.h

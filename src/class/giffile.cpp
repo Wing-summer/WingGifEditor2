@@ -37,13 +37,9 @@ GifFile::~GifFile() { clear(); }
 
 bool GifFile::isNull() const { return m_frameSize.isEmpty(); }
 
-int GifFile::width() const {
-    return m_frameSize.width();
-}
+int GifFile::width() const { return m_frameSize.width(); }
 
-int GifFile::height() const {
-    return m_frameSize.height();
-}
+int GifFile::height() const { return m_frameSize.height(); }
 
 QSize GifFile::size() const { return m_frameSize; }
 

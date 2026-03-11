@@ -16,18 +16,17 @@
 */
 
 #include "newdialog.h"
+#include "class/wingfiledialog.h"
 #include "control/toast.h"
 #include "utilities.h"
 
 #include <QButtonGroup>
 #include <QDialogButtonBox>
-#include <QFileDialog>
 #include <QPushButton>
 #include <QShortcut>
 #include <QWidget>
 
-NewDialog::NewDialog(NewType type, QWidget *parent)
-    : FramelessDialogBase(parent) {
+NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     auto widget = new QWidget(this);
     auto layout = new QVBoxLayout(widget);
 
@@ -39,24 +38,15 @@ NewDialog::NewDialog(NewType type, QWidget *parent)
 
     auto b = new QPushButton(tr("Add"), this);
     connect(b, &QPushButton::clicked, this, [=] {
-        QFileDialog d;
-        if (type == NewType::FromPics) {
-            d.setNameFilter(tr("Images (*.jpg *.tiff *.png)"));
-        } else {
-            d.setNameFilter("GIF (*.gif)");
-        }
-        d.setAcceptMode(QFileDialog::AcceptOpen);
-        d.setFileMode(QFileDialog::ExistingFiles);
-        if (d.exec()) {
-            auto files = d.selectedFiles();
-            for (auto &item : files) {
-                QImage img;
-                if (img.load(item)) {
-                    filenames << item;
-                    auto p = new QListWidgetItem(QIcon(":/images/picture.png"),
-                                                 item, imgslist);
-                    p->setToolTip(item);
-                }
+        auto files = WingFileDialog::getOpenFileNames(
+            this, {}, {}, tr("Images (*.jpg *.tiff *.png *.gif)"));
+        for (auto &item : files) {
+            QImage img;
+            if (img.load(item)) {
+                filenames << item;
+                auto p = new QListWidgetItem(QIcon(":/images/picture.png"),
+                                             item, imgslist);
+                p->setToolTip(item);
             }
         }
     });

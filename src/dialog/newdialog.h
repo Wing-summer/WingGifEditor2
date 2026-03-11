@@ -28,12 +28,10 @@
 #include <QObject>
 #include <QVBoxLayout>
 
-enum class NewType { FromPics, FromGifs };
-
 class NewDialog : public FramelessDialogBase {
     Q_OBJECT
 public:
-    NewDialog(NewType type, QWidget *parent = nullptr);
+    NewDialog(QWidget *parent = nullptr);
     QStringList getResult();
 
 private:

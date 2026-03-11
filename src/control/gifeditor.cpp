@@ -16,9 +16,10 @@
 */
 
 #include "gifeditor.h"
-#include <QGuiApplication>
+
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
+#include <QGuiApplication>
 #include <QPen>
 #include <QWheelEvent>
 

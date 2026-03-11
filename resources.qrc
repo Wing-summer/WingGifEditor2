@@ -64,7 +64,4 @@
         <file>images/wiki.png</file>
         <file>images/writable.png</file>
     </qresource>
-    <qresource prefix="/qpathedit/icons">
-        <file alias="dialog.ico">3rdparty/QPathEdit/Fatcow-Farm-Fresh-Dialog.ico</file>
-    </qresource>
 </RCC>

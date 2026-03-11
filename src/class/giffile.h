@@ -22,8 +22,8 @@
 
 #include "gifframe.h"
 
-#include <QImage>
 #include <QCache>
+#include <QImage>
 #include <QObject>
 #include <QString>
 #include <QTemporaryDir>

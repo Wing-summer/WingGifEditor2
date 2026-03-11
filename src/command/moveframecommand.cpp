@@ -49,9 +49,10 @@ void MoveFrameCommand::undo() {
             }
         }
         if (gif->frameCount() > 0) {
-            sel->select(gif->index(qBound(0, cur + 1,
-                                          static_cast<int>(gif->frameCount() - 1))),
-                        QItemSelectionModel::Current);
+            sel->select(
+                gif->index(qBound(0, cur + 1,
+                                  static_cast<int>(gif->frameCount() - 1))),
+                QItemSelectionModel::Current);
         }
         break;
     }
@@ -64,9 +65,10 @@ void MoveFrameCommand::undo() {
             }
         }
         if (gif->frameCount() > 0) {
-            sel->select(gif->index(qBound(0, cur - 1,
-                                          static_cast<int>(gif->frameCount() - 1))),
-                        QItemSelectionModel::Current);
+            sel->select(
+                gif->index(qBound(0, cur - 1,
+                                  static_cast<int>(gif->frameCount() - 1))),
+                QItemSelectionModel::Current);
         }
         break;
     }
@@ -93,9 +95,10 @@ void MoveFrameCommand::redo() {
             }
         }
         if (gif->frameCount() > 0) {
-            sel->select(gif->index(qBound(0, cur - 1,
-                                          static_cast<int>(gif->frameCount() - 1))),
-                        QItemSelectionModel::Current);
+            sel->select(
+                gif->index(qBound(0, cur - 1,
+                                  static_cast<int>(gif->frameCount() - 1))),
+                QItemSelectionModel::Current);
         }
         break;
     }
@@ -107,9 +110,10 @@ void MoveFrameCommand::redo() {
             }
         }
         if (gif->frameCount() > 0) {
-            sel->select(gif->index(qBound(0, cur + 1,
-                                          static_cast<int>(gif->frameCount() - 1))),
-                        QItemSelectionModel::Current);
+            sel->select(
+                gif->index(qBound(0, cur + 1,
+                                  static_cast<int>(gif->frameCount() - 1))),
+                QItemSelectionModel::Current);
         }
         break;
     }

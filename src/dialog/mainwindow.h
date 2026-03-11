@@ -32,6 +32,7 @@
 
 #include <QMainWindow>
 #include <QShortcut>
+#include <QSplitter>
 #include <QUndoStack>
 
 class MainWindow : public FramelessMainWindow {
@@ -220,6 +221,7 @@ private:
     Ribbon *m_ribbon = nullptr;
     QStatusBar *m_status = nullptr;
 
+    QSplitter *_splitter = nullptr;
     PlayGifManager *_player = nullptr;
     GifEditor *_editor = nullptr;
     GifContentModel *_model = nullptr;
@@ -232,8 +234,6 @@ private:
 
     CropGifDialog *_cuttingdlg;
     LogDialog *_logdialog;
-
-    RibbonTabContent *ribbonSetting = nullptr;
 
     QToolButton *_btnPlayerStop = nullptr;
     QList<QWidget *> _playDisWidgets;

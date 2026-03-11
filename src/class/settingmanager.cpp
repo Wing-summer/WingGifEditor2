@@ -18,7 +18,9 @@
 #include "settingmanager.h"
 #include "settings.h"
 
+#include "class/logger.h"
 #include "class/skinmanager.h"
+
 #include <QFileInfo>
 #include <QMetaEnum>
 
@@ -27,8 +29,13 @@ Q_GLOBAL_STATIC_WITH_ARGS(QString, SKIN_THEME, ("skin.theme"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_WINDOWSIZE, ("app.windowsize"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_LANGUAGE, ("app.lang"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, EDITOR_RECENTFILES, ("editor.recentfiles"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_LOG_LEVEL, ("sys.loglevel"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_LOG_COUNT, ("sys.logCount"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_USE_NATIVE_TITLEBAR,
                           ("sys.nativeTitleBar"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_USESYS_FILEDIALOG,
+                          ("sys.nativeDialog"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_SET_LAYOUT, ("set.layout"))
 
 SettingManager::SettingManager() { load(); }
 
@@ -65,24 +72,79 @@ void SettingManager::load() {
             m_lastUsedPath.clear();
         }
     }
+
+    m_setLayout = READ_CONFIG(OTHER_SET_LAYOUT, QByteArray()).toByteArray();
+
+#ifdef QT_DEBUG
+    m_logLevel = Logger::q4DEBUG;
+#else
+    READ_CONFIG_INT_POSITIVE(m_logLevel, OTHER_LOG_LEVEL,
+                             Logger::defaultLevel());
+    m_logLevel =
+        qBound(int(Logger::LEVEL_BEGIN), m_logLevel, int(Logger::LEVEL_LAST));
+#endif
+}
+
+int SettingManager::logLevel() const { return m_logLevel; }
+
+void SettingManager::setLogLevel(int newLogLevel) {
+    if (m_logLevel != newLogLevel) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(OTHER_LOG_LEVEL, newLogLevel);
+        m_logLevel = newLogLevel;
+    }
+}
+
+QByteArray SettingManager::editorLayout() const { return m_setLayout; }
+
+void SettingManager::setEditorLayout(const QByteArray &newSetLayout) {
+    if (m_setLayout != newSetLayout) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(OTHER_SET_LAYOUT, newSetLayout);
+        m_setLayout = newSetLayout;
+    }
+}
+
+bool SettingManager::useNativeFileDialog() const {
+    return m_useNativeFileDialog;
+}
+
+void SettingManager::setUseNativeFileDialog(bool newUseNativeFileDialog) {
+    if (m_useNativeFileDialog != newUseNativeFileDialog) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(OTHER_USESYS_FILEDIALOG, newUseNativeFileDialog);
+        m_useNativeFileDialog = newUseNativeFileDialog;
+    }
 }
 
 qsizetype SettingManager::logCount() const { return m_logCount; }
 
 void SettingManager::setLogCount(qsizetype newLogCount) {
-    m_logCount = newLogCount;
+    if (m_logCount != newLogCount) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(OTHER_LOG_COUNT, newLogCount);
+        m_logCount = newLogCount;
+    }
 }
 
 bool SettingManager::useNativeTitleBar() const { return m_useNativeTitleBar; }
 
 void SettingManager::setUseNativeTitleBar(bool newUseNativeTitleBar) {
-    m_useNativeTitleBar = newUseNativeTitleBar;
+    if (m_useNativeTitleBar != newUseNativeTitleBar) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(OTHER_USE_NATIVE_TITLEBAR, newUseNativeTitleBar);
+        m_useNativeTitleBar = newUseNativeTitleBar;
+    }
 }
 
 QStringList SettingManager::recentFiles() const { return m_recentFiles; }
 
 void SettingManager::setRecentFiles(const QStringList &newRecentFiles) {
-    m_recentFiles = newRecentFiles;
+    if (m_recentFiles != newRecentFiles) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(EDITOR_RECENTFILES, newRecentFiles);
+        m_recentFiles = newRecentFiles;
+    }
 }
 
 Qt::WindowState SettingManager::defaultWinState() const {
@@ -90,50 +152,30 @@ Qt::WindowState SettingManager::defaultWinState() const {
 }
 
 void SettingManager::setDefaultWinState(Qt::WindowState newDefaultWinState) {
-    switch (newDefaultWinState) {
-    case Qt::WindowNoState:
-    case Qt::WindowMaximized:
-    case Qt::WindowFullScreen:
-        break;
-    default:
-        newDefaultWinState = Qt::WindowMaximized;
-        break;
+    if (m_defaultWinState != newDefaultWinState) {
+        switch (newDefaultWinState) {
+        case Qt::WindowNoState:
+        case Qt::WindowMaximized:
+        case Qt::WindowFullScreen:
+            break;
+        default:
+            newDefaultWinState = Qt::WindowMaximized;
+            break;
+        }
+        HANDLE_CONFIG;
+        WRITE_CONFIG(APP_WINDOWSIZE, newDefaultWinState);
+        m_defaultWinState = newDefaultWinState;
     }
-    m_defaultWinState = newDefaultWinState;
-}
-
-void SettingManager::save() {
-    HANDLE_CONFIG;
-    WRITE_CONFIG(EDITOR_RECENTFILES, m_recentFiles);
-    WRITE_CONFIG(APP_LASTUSED_PATH, m_lastUsedPath);
-
-    WRITE_CONFIG(SKIN_THEME, m_themeID);
-    WRITE_CONFIG(APP_LANGUAGE, m_defaultLang);
-    WRITE_CONFIG(APP_WINDOWSIZE, m_defaultWinState);
-
-#ifdef WINGHEX_USE_FRAMELESS
-    WRITE_CONFIG(OTHER_USE_NATIVE_TITLEBAR, m_useNativeTitleBar);
-#endif
-}
-
-void SettingManager::reset() {
-    HANDLE_CONFIG;
-
-    WRITE_CONFIG(SKIN_THEME, 0);
-    WRITE_CONFIG(APP_LANGUAGE, QString());
-    WRITE_CONFIG(APP_WINDOWSIZE, Qt::WindowMaximized);
-
-#ifdef WINGHEX_USE_FRAMELESS
-    WRITE_CONFIG(OTHER_USE_NATIVE_TITLEBAR, false);
-#endif
-
-    load();
 }
 
 QString SettingManager::defaultLang() const { return m_defaultLang; }
 
 void SettingManager::setDefaultLang(const QString &newDefaultLang) {
-    m_defaultLang = newDefaultLang;
+    if (m_defaultLang != newDefaultLang) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(APP_LANGUAGE, newDefaultLang);
+        m_defaultLang = newDefaultLang;
+    }
 }
 
 SettingManager &SettingManager::instance() {
@@ -145,4 +187,10 @@ SettingManager::~SettingManager() {}
 
 int SettingManager::themeID() const { return m_themeID; }
 
-void SettingManager::setThemeID(int newThemeID) { m_themeID = newThemeID; }
+void SettingManager::setThemeID(int newThemeID) {
+    if (m_themeID != newThemeID) {
+        HANDLE_CONFIG;
+        WRITE_CONFIG(SKIN_THEME, newThemeID);
+        m_themeID = newThemeID;
+    }
+}

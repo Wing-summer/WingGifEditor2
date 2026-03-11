@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -17,8 +17,11 @@
 
 #include "exportdialog.h"
 
+#include "class/wingfiledialog.h"
+
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QShortcut>
@@ -31,24 +34,35 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
     layout->addWidget(new QLabel(tr("ChooseFolder"), this));
     layout->addSpacing(3);
 
-    folder = new QPathEdit(this);
-    folder->setAllowEmptyPath(false);
-    folder->setEditable(false);
-    folder->setPathMode(QPathEdit::ExistingFolder);
+    auto hlayout = new QHBoxLayout;
+    folder = new QLineEdit(this);
+    folder->setMinimumWidth(200);
+    folder->setReadOnly(true);
     QDir dir(
         QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-    dir.mkdir("WingGifEditor");
-    connect(folder, &QPathEdit::pathChanged, folder, &QPathEdit::setToolTip);
-    folder->setPath(dir.absolutePath() + "/" + "WingGifEditor");
+    auto subpath = QLatin1String("WingGifEditor");
+    dir.mkdir(subpath);
+    connect(folder, &QLineEdit::textChanged, folder, &QLineEdit::setToolTip);
+    folder->setText(dir.absoluteFilePath(subpath));
+    hlayout->addWidget(folder);
 
-    layout->addWidget(folder);
-    layout->addSpacing(10);
+    auto btn = new QPushButton(this);
+    btn->setText(QLatin1String("..."));
+    btn->setMinimumWidth(25);
+    btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    connect(btn, &QPushButton::clicked, this, [this]() {
+        auto path = WingFileDialog::getExistingDirectory();
+        if (!path.isEmpty()) {
+            folder->setText(path);
+        }
+    });
+    hlayout->addWidget(btn);
+    layout->addLayout(hlayout);
 
     auto group = new QButtonGroup(this);
     group->setExclusive(true);
 
-    auto btnBox = new QWidget(this);
-    auto buttonLayout = new QHBoxLayout(btnBox);
+    auto buttonLayout = new QHBoxLayout;
     buttonLayout->setSpacing(0);
 
     int id = 0;
@@ -94,8 +108,8 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
     buttonLayout->addWidget(b);
 
     group->button(0)->setChecked(true);
-    layout->addWidget(btnBox);
-    layout->addSpacing(20);
+    layout->addLayout(buttonLayout);
+    layout->addSpacing(10);
 
     auto dbbox = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -107,14 +121,13 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
     layout->addWidget(dbbox);
 
     buildUpContent(widget);
-
     setWindowTitle(tr("Export"));
 }
 
 ExportResult ExportDialog::getResult() { return res; }
 
 void ExportDialog::on_accept() {
-    res.path = folder->path();
+    res.path = folder->text();
     done(1);
 }
 

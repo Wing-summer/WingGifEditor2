@@ -25,8 +25,8 @@
 #include <QObject>
 #include <QString>
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 class GifWriter : public QObject {
     Q_OBJECT

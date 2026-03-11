@@ -32,9 +32,6 @@ public:
     explicit EditorSettingDialog(QWidget *parent = nullptr);
     ~EditorSettingDialog();
 
-private slots:
-    void on_buttonBox_clicked(QAbstractButton *button);
-
 private:
     Ui::EditorSettingDialog *ui;
 

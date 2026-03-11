@@ -45,7 +45,7 @@ Q_DECL_UNUSED static inline QIcon ICONRES(const QString &name) {
 
 class Utilities {
 public:
-    static QString processBytesCount(qint64 bytescount) {
+    inline static QString processBytesCount(qint64 bytescount) {
         QStringList B{"B", "KB", "MB", "GB", "TB"};
         auto av = bytescount;
         auto r = av;
@@ -62,11 +62,11 @@ public:
         return QStringLiteral("%1 TB").arg(av);
     }
 
-    static bool fileCanWrite(QString path) {
+    inline static bool fileCanWrite(QString path) {
         return QFileInfo(path).permission(QFile::WriteUser);
     }
 
-    static void moveToCenter(QWidget *window) {
+    inline static void moveToCenter(QWidget *window) {
         if (window == nullptr)
             return;
         auto screen = qApp->primaryScreen()->availableSize();
@@ -74,9 +74,13 @@ public:
                      (screen.height() - window->height()) / 2);
     }
 
-    static QString getAppDataPath() {
+    inline static QString getAppDataPath() {
         return QStandardPaths::writableLocation(
             QStandardPaths::AppDataLocation);
+    }
+
+    inline static QString getAbsoluteDirPath(const QString &fileName) {
+        return QFileInfo(fileName).absoluteDir().absolutePath();
     }
 };
 
