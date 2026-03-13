@@ -50,17 +50,11 @@ public:
     bool useNativeTitleBar() const;
     void setUseNativeTitleBar(bool newUseNativeTitleBar);
 
-    qsizetype logCount() const;
-    void setLogCount(qsizetype newLogCount);
-
     bool useNativeFileDialog() const;
     void setUseNativeFileDialog(bool newUseNativeFileDialog);
 
     QByteArray editorLayout() const;
     void setEditorLayout(const QByteArray &newSetLayout);
-
-    int logLevel() const;
-    void setLogLevel(int newLogLevel);
 
 private:
     SettingManager();
@@ -70,7 +64,6 @@ private:
     Q_DISABLE_COPY(SettingManager)
 private:
     int m_themeID = 0;
-    int m_logLevel = 0;
     QString m_defaultLang;
 
     bool m_useNativeFileDialog = true;
@@ -79,7 +72,6 @@ private:
     Qt::WindowState m_defaultWinState = Qt::WindowMaximized;
 
     QString m_lastUsedPath;
-    qsizetype m_logCount = 20;
     bool m_useNativeTitleBar = false;
 };
 

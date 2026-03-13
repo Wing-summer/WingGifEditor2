@@ -55,6 +55,12 @@ void GifContentModel::updateLinkedListViewCurrent() const {
 
 GifFile::ErrorCode GifContentModel::readGifFile(const QString &gif) {
     auto r = _file.load(gif);
+    if (r == GifFile::ErrorCode::SUCCEEDED) {
+        if (frameCount() == 0) {
+            emit layoutChanged();
+            return GifFile::ErrorCode::ERR_NOT_READABLE;
+        }
+    }
     emit layoutChanged();
     return r;
 }

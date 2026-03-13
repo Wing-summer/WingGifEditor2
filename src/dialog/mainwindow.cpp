@@ -28,7 +28,7 @@
 #include "class/gifcontentmodel.h"
 #include "class/giffile.h"
 #include "class/gifwriter.h"
-#include "class/logger.h"
+#include "class/languagemanager.h"
 #include "class/qkeysequences.h"
 #include "class/settingmanager.h"
 #include "class/waitingloop.h"
@@ -43,12 +43,12 @@
 #include "command/moveframecommand.h"
 #include "command/reduceframecommand.h"
 #include "command/removeframecommand.h"
-#include "command/replaceframecommand.h"
 #include "command/reverseframecommand.h"
 #include "command/rotateframecommand.h"
 #include "command/scaleframecommand.h"
 #include "control/gifcontentgallery.h"
 #include "control/toast.h"
+#include "define.h"
 #include "dialog/aboutsoftwaredialog.h"
 #include "dialog/createreversedialog.h"
 #include "dialog/exportdialog.h"
@@ -195,11 +195,6 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     });
     connect(_editor, &GifEditor::selRectChanged, _cuttingdlg,
             &CropGifDialog::setSelRect);
-
-    _logdialog = new LogDialog(this);
-    auto &log = Logger::instance();
-    log.setLogLevel(Logger::Level::q5TRACE);
-    connect(&log, &Logger::log, _logdialog, &LogDialog::log);
 
     setEditModeEnabled(false);
 
@@ -417,21 +412,37 @@ void MainWindow::on_copy() {
         auto index = i.row();
         sel.append(_model->frame(index));
     }
-    ClipBoardHelper::setImageFrames(sel);
+    if (ClipBoardHelper::setImageFrames(sel)) {
+        Toast::toast(this, NAMEICONRES(QStringLiteral("copy")),
+                     tr("CopyToClipBoard"));
+    } else {
+        Toast::toast(this, NAMEICONRES(QStringLiteral("copy")),
+                     tr("UnCopyToClipBoard"));
+    }
 }
 
 void MainWindow::on_cut() {
     _player->stop();
-    auto sels = _gallery->selectionModel()->selectedRows();
+    auto sels = getSelectedIndices();
+    if (sels.size() == _model->frameCount()) {
+        Toast::toast(this, NAMEICONRES(QStringLiteral("cut")),
+                     tr("MustKeepOneFrame"));
+        return;
+    }
     QVector<int> indices;
     QVector<QSharedPointer<GifFrame>> sel;
-    for (auto &i : sels) {
-        auto index = i.row();
+    for (auto &index : sels) {
         indices.append(index);
         sel.append(_model->frame(index));
     }
-    ClipBoardHelper::setImageFrames(sel);
+    if (!ClipBoardHelper::setImageFrames(sel)) {
+        Toast::toast(this, NAMEICONRES(QStringLiteral("cut")),
+                     tr("UnCutToClipBoard"));
+        return;
+    }
     undo.push(new RemoveFrameCommand(_model, indices));
+    Toast::toast(this, NAMEICONRES(QStringLiteral("cut")),
+                 tr("CutToClipBoard"));
 }
 
 void MainWindow::on_paste() {
@@ -446,7 +457,13 @@ void MainWindow::on_paste() {
 
 void MainWindow::on_del() {
     _player->stop();
-    undo.push(new RemoveFrameCommand(_model, getSelectedIndices()));
+    auto sels = getSelectedIndices();
+    if (sels.size() == _model->frameCount()) {
+        Toast::toast(this, NAMEICONRES(QStringLiteral("cut")),
+                     tr("MustKeepOneFrame"));
+        return;
+    }
+    undo.push(new RemoveFrameCommand(_model, sels));
 }
 
 void MainWindow::on_selall() {
@@ -546,7 +563,6 @@ void MainWindow::on_reverse() {
         return;
     }
     std::sort(rs.begin(), rs.end());
-    auto r = rs.first();
 
     int start = rs.first();
     int end = start;
@@ -758,9 +774,21 @@ void MainWindow::on_fullscreen() { this->showFullScreen(); }
 void MainWindow::on_about() { AboutSoftwareDialog().exec(); }
 
 void MainWindow::on_sponsor() {
-    QDesktopServices::openUrl(
-        QUrl(QStringLiteral("https://github.com/Wing-summer/"
-                            "WingGifEditor2#%E6%8D%90%E5%8A%A9")));
+    // Github is not easy to access for Chinese people,
+    // Gitee mirror instead
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    if (LanguageManager::instance().defaultLocale().territory() ==
+#else
+    if (LanguageManager::instance().defaultLocale().country() ==
+#endif
+        QLocale::China) {
+        QDesktopServices::openUrl(QUrl(QStringLiteral(
+            "https://gitee.com/wing-cloud/WingGifEditor2#%E6%8D%90%E5%8A%A9")));
+    } else {
+        QDesktopServices::openUrl(
+            QUrl(QStringLiteral("https://github.com/Wing-summer/"
+                                "WingGifEditor2#%E6%8D%90%E5%8A%A9")));
+    }
 }
 
 void MainWindow::on_wiki() {
@@ -993,9 +1021,6 @@ RibbonTabContent *MainWindow::buildAboutPage(RibbonTabContent *tab) {
     addPannelAction(pannel, QStringLiteral("qt"), tr("AboutQT"),
                     [this] { WingMessageBox::aboutQt(this); });
 
-    addPannelAction(pannel, QStringLiteral("log"), tr("Log"),
-                    [=] { _logdialog->show(); });
-
     return tab;
 }
 
@@ -1008,21 +1033,76 @@ void MainWindow::openGif(const QString &filename) {
     _model->clearData();
     undo.clear();
 
-    if (checkIsGif(filename) && readGif(filename)) {
-        _curfilename = filename;
-        setSaved(true);
-        setEditModeEnabled(true);
-        m_recentmanager->addRecentFile(filename);
+    if (checkIsGif(filename)) {
+        auto r = readGif(filename);
+        if (r == GifFile::ErrorCode::SUCCEEDED) {
+            _curfilename = filename;
+            setSaved(true);
+            setEditModeEnabled(true);
+            m_recentmanager->addRecentFile(filename);
+        } else {
+            QString err;
+            switch (r) {
+            case GifFile::ErrorCode::ERR_OPEN_FAILED:
+                err = tr("Failed to open given file");
+                break;
+            case GifFile::ErrorCode::ERR_NO_SCRN_DSCR:
+                err = tr("Screen descriptor has already been set");
+                break;
+            case GifFile::ErrorCode::ERR_NO_COLOR_MAP:
+                err = tr("Neither global nor local color map");
+                break;
+            case GifFile::ErrorCode::ERR_DATA_TOO_BIG:
+                err = tr("Number of pixels bigger than width * height");
+                break;
+            case GifFile::ErrorCode::ERR_NOT_ENOUGH_MEM:
+                err = tr("Failed to allocate required memory");
+                break;
+            case GifFile::ErrorCode::ERR_CLOSE_FAILED:
+                err = tr("Failed to close given file");
+                break;
+            case GifFile::ErrorCode::ERR_READ_FAILED:
+                err = tr("Failed to read from given file");
+                break;
+            case GifFile::ErrorCode::ERR_NOT_GIF_FILE:
+                err = tr("Data is not in GIF format");
+                break;
+            case GifFile::ErrorCode::ERR_NO_IMAG_DSCR:
+                err = tr("No Image Descriptor detected");
+                break;
+            case GifFile::ErrorCode::ERR_WRONG_RECORD:
+                err = tr("Wrong record type detected");
+                break;
+            case GifFile::ErrorCode::ERR_NOT_READABLE:
+                err = tr("Given file was not opened for read");
+                break;
+            case GifFile::ErrorCode::ERR_IMAGE_DEFECT:
+                err = tr("Image is defective, decoding aborted");
+                break;
+            case GifFile::ErrorCode::ERR_EOF_TOO_SOON:
+                err = tr("Image EOF detected before image complete");
+                break;
+            case GifFile::ErrorCode::SUCCEEDED:
+                break;
+            }
+            WingMessageBox::critical(this, qAppName(),
+                                     tr("OpenFailed - ") + err);
+        }
     } else {
         Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
     }
 }
 
-bool MainWindow::readGif(const QString &gif) {
+GifFile::ErrorCode MainWindow::readGif(const QString &gif) {
     WaitingLoop dw(tr("ReadingGif"));
     auto r = _model->readGifFile(gif);
 
-    // TODO report the error
+    switch (r) {
+    case GifFile::ErrorCode::SUCCEEDED:
+        break;
+    default:
+        return r;
+    }
 
     if (_gallery->currentIndex().row() == 0) {
         auto index = _model->index(0);
@@ -1031,7 +1111,7 @@ bool MainWindow::readGif(const QString &gif) {
         _gallery->setCurrentIndex(_model->index(0));
     }
     _editor->fitOpenSize();
-    return true;
+    return r;
 }
 
 bool MainWindow::writeGif(const QString &gif, unsigned int loopCount,
@@ -1079,69 +1159,77 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
 
 bool MainWindow::loadfromImages(const QStringList &filenames, int newInterval,
                                 qsizetype index, const QSize &size) {
+    if (_model->frameCount() + filenames.size() > FRAME_COUNT_LIMIT) {
+        return false;
+    }
+
     if (index < 0) {
         index = qMax(_model->frameCount() - 1, qsizetype(0));
     }
     Q_ASSERT(index < _model->frameCount());
+    Q_ASSERT(_model->frameCount() > 0);
 
-    // QVector<GifData> frames;
-    // // for (auto &f : filenames) {
-    // //     QImage img;
-    // //     if (img.load(f)) {
-    // //         GifData d;
-    // //         d.delay = newInterval;
-    // //         d.image = img;
-    // //         frames.append(d);
-    // //     }
-    // // }
+    int total = filenames.size();
+    undo.push(new InsertFrameCommand(
+        _model, index,
+        [this, filenames](int index) -> QPair<int, QImage> {
+            QImage img;
+            auto f = filenames.at(index);
+            if (!img.load(f)) {
+                return {-1, {}};
+            }
 
-    // if (frames.isEmpty()) {
-    //     return false;
-    // }
-
-    // auto oimg = frames.first().image;
-    // auto osize = size == QSize() ? oimg.size() : size;
-
-    // if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
-    //     osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
-    // }
-
-    // frames.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
-
-    // undo.push(new InsertFrameCommand(_model, index, frames));
+            auto osize = _model->frameSize();
+            if (img.size() != osize) {
+                osize.scale(osize, Qt::KeepAspectRatio);
+            }
+            return qMakePair(FRAME_DEFAULT_DELAY, img);
+        },
+        total));
 
     return true;
 }
 
 bool MainWindow::loadfromGifs(const QStringList &gifs, qsizetype index,
                               const QSize &size) {
-    // QVector<GifData> datas;
-    // for (auto &gif : gifs) {
-    //     GifReader reader;
-    //     if (reader.load(gif)) {
-    //         for (int i = 0; i < reader.imageCount(); ++i) {
-    //             GifData d;
-    //             d.image = reader.image(i);
-    //             d.delay = reader.delay(i);
-    //             datas.append(d);
-    //         }
-    //     }
-    // }
+    auto curCount = _model->frameCount();
+    if (curCount + gifs.size() > FRAME_COUNT_LIMIT) {
+        return false;
+    }
 
-    // if (datas.isEmpty()) {
-    //     return false;
-    // }
+    if (index < 0) {
+        index = qMax(curCount - 1, qsizetype(0));
+    }
+    Q_ASSERT(index < curCount);
+    Q_ASSERT(curCount > 0);
 
-    // auto oimg = datas.first().image;
-    // auto osize = size == QSize() ? oimg.size() : size;
+    QVector<QSharedPointer<GifFrame>> datas;
+    for (auto &gif : gifs) {
+        GifFile reader;
+        if (reader.load(gif) == GifFile::ErrorCode::SUCCEEDED) {
+            if (curCount + reader.frameCount() > FRAME_COUNT_LIMIT) {
+                return false;
+            }
+            auto osize = _model->frameSize();
+            if (osize != reader.size()) {
+                datas << QtConcurrent::blockingMapped<GifFile::data_type>(
+                    reader.begin(), reader.end(),
+                    [this, osize](const QSharedPointer<GifFrame> &frame)
+                        -> QSharedPointer<GifFrame> {
+                        auto delay = frame->delay();
+                        auto image = frame->image();
+                        return _model->generateFrame(
+                            image.scaled(osize, Qt::IgnoreAspectRatio,
+                                         Qt::SmoothTransformation),
+                            delay);
+                    });
+            } else {
+                datas.append(reader.begin(), reader.end());
+            }
+        }
+    }
 
-    // if (osize.width() > UINT16_MAX || osize.height() > UINT16_MAX) {
-    //     osize.scale(UINT16_MAX, UINT16_MAX, Qt::KeepAspectRatio);
-    // }
-
-    // datas.first().image = oimg.scaled(osize, Qt::KeepAspectRatio);
-    // undo.push(new InsertFrameCommand(_model, index, datas));
-
+    undo.push(new InsertFrameCommand(_model, index, datas));
     return true;
 }
 

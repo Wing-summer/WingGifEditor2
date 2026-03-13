@@ -18,7 +18,6 @@
 #include "settingmanager.h"
 #include "settings.h"
 
-#include "class/logger.h"
 #include "class/skinmanager.h"
 
 #include <QFileInfo>
@@ -29,8 +28,6 @@ Q_GLOBAL_STATIC_WITH_ARGS(QString, SKIN_THEME, ("skin.theme"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_WINDOWSIZE, ("app.windowsize"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, APP_LANGUAGE, ("app.lang"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, EDITOR_RECENTFILES, ("editor.recentfiles"))
-Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_LOG_LEVEL, ("sys.loglevel"))
-Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_LOG_COUNT, ("sys.logCount"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_USE_NATIVE_TITLEBAR,
                           ("sys.nativeTitleBar"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, OTHER_USESYS_FILEDIALOG,
@@ -74,25 +71,6 @@ void SettingManager::load() {
     }
 
     m_setLayout = READ_CONFIG(OTHER_SET_LAYOUT, QByteArray()).toByteArray();
-
-#ifdef QT_DEBUG
-    m_logLevel = Logger::q4DEBUG;
-#else
-    READ_CONFIG_INT_POSITIVE(m_logLevel, OTHER_LOG_LEVEL,
-                             Logger::defaultLevel());
-    m_logLevel =
-        qBound(int(Logger::LEVEL_BEGIN), m_logLevel, int(Logger::LEVEL_LAST));
-#endif
-}
-
-int SettingManager::logLevel() const { return m_logLevel; }
-
-void SettingManager::setLogLevel(int newLogLevel) {
-    if (m_logLevel != newLogLevel) {
-        HANDLE_CONFIG;
-        WRITE_CONFIG(OTHER_LOG_LEVEL, newLogLevel);
-        m_logLevel = newLogLevel;
-    }
 }
 
 QByteArray SettingManager::editorLayout() const { return m_setLayout; }
@@ -114,16 +92,6 @@ void SettingManager::setUseNativeFileDialog(bool newUseNativeFileDialog) {
         HANDLE_CONFIG;
         WRITE_CONFIG(OTHER_USESYS_FILEDIALOG, newUseNativeFileDialog);
         m_useNativeFileDialog = newUseNativeFileDialog;
-    }
-}
-
-qsizetype SettingManager::logCount() const { return m_logCount; }
-
-void SettingManager::setLogCount(qsizetype newLogCount) {
-    if (m_logCount != newLogCount) {
-        HANDLE_CONFIG;
-        WRITE_CONFIG(OTHER_LOG_COUNT, newLogCount);
-        m_logCount = newLogCount;
     }
 }
 

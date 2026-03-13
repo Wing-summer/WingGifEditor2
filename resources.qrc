@@ -11,7 +11,6 @@
         <file>images/del.png</file>
         <file>images/desel.png</file>
         <file>images/edit.png</file>
-        <file>images/effect.png</file>
         <file>images/export.png</file>
         <file>images/file.png</file>
         <file>images/first.png</file>
@@ -25,7 +24,6 @@
         <file>images/info.png</file>
         <file>images/jmp.png</file>
         <file>images/last.png</file>
-        <file>images/log.png</file>
         <file>images/mvb.png</file>
         <file>images/mvf.png</file>
         <file>images/new.png</file>
@@ -33,11 +31,8 @@
         <file>images/open.png</file>
         <file>images/paste.png</file>
         <file>images/pause.png</file>
-        <file>images/pic.png</file>
         <file>images/picture.png</file>
-        <file>images/plugin.png</file>
         <file>images/qt.png</file>
-        <file>images/readonly.png</file>
         <file>images/recent.png</file>
         <file>images/redo.png</file>
         <file>images/reverse.png</file>
@@ -62,6 +57,5 @@
         <file>images/undo.png</file>
         <file>images/unsaved.png</file>
         <file>images/wiki.png</file>
-        <file>images/writable.png</file>
     </qresource>
 </RCC>

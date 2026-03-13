@@ -130,8 +130,6 @@ set(CLS_SRC
     src/class/wingprogressdialog.h
     src/class/settingmanager.cpp
     src/class/settingmanager.h
-    src/class/logger.cpp
-    src/class/logger.h
     src/class/qtlockedfile.h
     src/class/qtlockedfile.cpp
     src/class/gifframe.h
@@ -144,6 +142,8 @@ set(CONTORL_SRC
     src/control/gifcontentgallery.cpp
     src/control/toast.cpp
     src/control/toast.h
+    src/control/aspectratiopixmaplabel.h
+    src/control/aspectratiopixmaplabel.cpp
     src/control/imagecropper/imagecropper_e.h
     src/control/imagecropper/imagecropper_p.h
     src/control/imagecropper/imagecropper.cpp
@@ -197,6 +197,7 @@ set(PROJECT_SOURCES
     src/utilities.h
     src/dbghelper.h
     resources.qrc
+    src/define.h
     theme/breeze.qrc)
 
 include_directories("${CMAKE_SOURCE_DIR}/src")

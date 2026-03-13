@@ -24,6 +24,9 @@ InsertFrameCommand::InsertFrameCommand(
     : UndoCommand(model, parent), _oldindex(index) {
     for (int i = 0; i < total; ++i) {
         auto d = imgProc(i);
+        if (d.second.isNull()) {
+            continue;
+        }
         _data.append(model->generateFrame(d.second, d.first));
     }
 }

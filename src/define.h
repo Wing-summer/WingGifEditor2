@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -15,38 +15,13 @@
 ** =============================================================================
 */
 
-#ifndef NEWDIALOG_H
-#define NEWDIALOG_H
+#ifndef DEFINE_H
+#define DEFINE_H
 
-#include "control/aspectratiopixmaplabel.h"
-#include "framelessdialogbase.h"
+#include <cstdint>
 
-#include <QDialog>
-#include <QHBoxLayout>
-#include <QListWidget>
-#include <QMainWindow>
-#include <QObject>
-#include <QVBoxLayout>
+constexpr auto FRAME_COUNT_LIMIT = 400;
+constexpr auto FRAME_DEFAULT_DELAY = 40;
+constexpr auto FRAME_MAX_SIZE = UINT16_MAX;
 
-class NewDialog : public FramelessDialogBase {
-    Q_OBJECT
-public:
-    NewDialog(QWidget *parent = nullptr);
-    QStringList getResult();
-
-private:
-    void on_accept();
-    void on_reject();
-
-protected:
-    void closeEvent(QCloseEvent *event) override;
-
-private:
-    QStringList filenames;
-
-    QListWidget *imgslist;
-    AspectRatioPixmapLabel *imgview;
-    QLabel *imgsize;
-};
-
-#endif // NEWDIALOG_H
+#endif // DEFINE_H

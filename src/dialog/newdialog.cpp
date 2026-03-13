@@ -134,11 +134,10 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     hbox->addWidget(imgslist);
     auto vbox = new QVBoxLayout(w);
     hbox->addLayout(vbox);
-    imgview = new QLabel(this);
+    imgview = new AspectRatioPixmapLabel(this);
     imgview->setFixedSize(200, 200);
     imgview->setScaledContents(true);
-    imgview->setPixmap(nopic.scaled(imgview->size(), Qt::KeepAspectRatio,
-                                    Qt::SmoothTransformation));
+    imgview->setPixmap(nopic);
     vbox->addWidget(imgview);
     vbox->addSpacing(5);
     vbox->addWidget(new QLabel(tr("Size"), this));
@@ -162,11 +161,9 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
         auto cur = imgslist->currentItem();
         if (cur) {
             auto p = QPixmap(cur->text());
-            imgview->setPixmap(p.scaled(imgview->size(), Qt::KeepAspectRatio,
-                                        Qt::SmoothTransformation));
-            imgsize->setText(QString("%1 × %2")
-                                 .arg(p.size().width())
-                                 .arg(p.size().height()));
+            imgview->setPixmap(p);
+            imgsize->setText(
+                QStringLiteral("%1 × %2").arg(p.width()).arg(p.height()));
         } else {
             imgview->setPixmap(nopic);
             imgsize->setText(tr("Unknown"));

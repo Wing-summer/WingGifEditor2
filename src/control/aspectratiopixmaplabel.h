@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -14,39 +14,27 @@
 ** along with this program. If not, see <https://www.gnu.org/licenses/>.
 ** =============================================================================
 */
+#ifndef ASPECTRATIOPIXMAPLABEL_H
+#define ASPECTRATIOPIXMAPLABEL_H
 
-#ifndef NEWDIALOG_H
-#define NEWDIALOG_H
+#include <QLabel>
 
-#include "control/aspectratiopixmaplabel.h"
-#include "framelessdialogbase.h"
-
-#include <QDialog>
-#include <QHBoxLayout>
-#include <QListWidget>
-#include <QMainWindow>
-#include <QObject>
-#include <QVBoxLayout>
-
-class NewDialog : public FramelessDialogBase {
+class AspectRatioPixmapLabel : public QLabel {
     Q_OBJECT
 public:
-    NewDialog(QWidget *parent = nullptr);
-    QStringList getResult();
+    explicit AspectRatioPixmapLabel(QWidget *parent = nullptr);
 
-private:
-    void on_accept();
-    void on_reject();
+public slots:
+    void setPixmap(const QPixmap &pm);
 
 protected:
-    void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    QStringList filenames;
+    void updateMargins();
 
-    QListWidget *imgslist;
-    AspectRatioPixmapLabel *imgview;
-    QLabel *imgsize;
+    int pixmapWidth = 0;
+    int pixmapHeight = 0;
 };
 
-#endif // NEWDIALOG_H
+#endif // ASPECTRATIOPIXMAPLABEL_H

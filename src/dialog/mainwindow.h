@@ -190,7 +190,7 @@ private:
     RibbonTabContent *buildSettingPage(RibbonTabContent *tab);
     RibbonTabContent *buildAboutPage(RibbonTabContent *tab);
 
-    bool readGif(const QString &gif);
+    GifFile::ErrorCode readGif(const QString &gif);
     bool writeGif(const QString &gif, unsigned int loopCount = 0,
                   const QString &comment = QString());
     bool exportGifFrames(const QString &dirPath, const char *ext);
@@ -233,8 +233,6 @@ private:
     RecentFileManager *m_recentmanager = nullptr;
 
     CropGifDialog *_cuttingdlg;
-    LogDialog *_logdialog;
-
     QToolButton *_btnPlayerStop = nullptr;
     QList<QWidget *> _playDisWidgets;
 
