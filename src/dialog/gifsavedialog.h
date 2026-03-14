@@ -31,7 +31,7 @@ struct GifSaveResult {
 class GifSaveDialog : public FramelessDialogBase {
     Q_OBJECT
 public:
-    explicit GifSaveDialog(QWidget *parent = nullptr);
+    explicit GifSaveDialog(const QString &comment, QWidget *parent = nullptr);
     virtual ~GifSaveDialog();
 
     GifSaveResult getResult() const;

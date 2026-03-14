@@ -30,13 +30,13 @@ public:
     void setImage(const QImage &img);
 
     QRectF selRect() const;
+    bool isCuttingMode() const;
 
 public slots:
     void setSelRect(int x, int y, int w, int h);
     void fitOpenSize();
 
     void fitInEditorView();
-
     void setCropMode(bool b);
 
     void zoomIn();
@@ -45,15 +45,17 @@ public slots:
 
 signals:
     void selRectChanged(QRectF rect);
+    void cropFinished(bool crop);
 
 protected:
+    virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+    virtual void keyPressEvent(QKeyEvent *event) override;
+    virtual void contextMenuEvent(QContextMenuEvent *event) override;
     virtual void wheelEvent(QWheelEvent *event) override;
     virtual void leaveEvent(QEvent *event) override;
 
 private:
     GifEditorScene *scene;
-
-    bool iscut = true;
 };
 
 #endif // GIFEDITOR_H

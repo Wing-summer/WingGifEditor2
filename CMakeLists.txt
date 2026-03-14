@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 
 project(WingGifEditor2 LANGUAGES CXX)
 
@@ -29,8 +29,6 @@ option(WINGGIF_USE_FRAMELESS "Use borderless windows to ensure UI uniformity"
        TRUE)
 
 add_subdirectory(3rdparty/giflib)
-
-find_package(OpenMP REQUIRED)
 
 if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /utf-8")
@@ -83,17 +81,13 @@ set(DIALOG_SRC
     src/dialog/newdialog.h
     src/dialog/scalegifdialog.cpp
     src/dialog/scalegifdialog.h
-    src/dialog/cropgifdialog.cpp
-    src/dialog/cropgifdialog.h
     src/dialog/aboutsoftwaredialog.cpp
     src/dialog/aboutsoftwaredialog.h
     src/dialog/aboutsoftwaredialog.ui
     src/dialog/fileinfodialog.cpp
     src/dialog/fileinfodialog.h
     src/dialog/gifsavedialog.h
-    src/dialog/gifsavedialog.cpp
-    src/dialog/logdialog.h
-    src/dialog/logdialog.cpp)
+    src/dialog/gifsavedialog.cpp)
 
 set(CLS_SRC
     src/class/appmanager.cpp
@@ -239,7 +233,7 @@ endif()
 # fixed bundle identifier manually though.
 if(Qt6_VERSION VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER
-                         com.example.WingGifEditor2)
+                         com.wingsummer.WingGifEditor2)
 endif()
 
 set_target_properties(

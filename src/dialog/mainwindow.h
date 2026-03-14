@@ -25,9 +25,7 @@
 #include "class/recentfilemanager.h"
 #include "control/gifcontentgallery.h"
 #include "control/gifeditor.h"
-#include "dialog/cropgifdialog.h"
 #include "dialog/framelessmainwindow.h"
-#include "dialog/logdialog.h"
 #include "utilities.h"
 
 #include <QMainWindow>
@@ -37,11 +35,6 @@
 
 class MainWindow : public FramelessMainWindow {
     Q_OBJECT
-
-    friend class PluginSystem;
-
-public:
-    enum ToolButtonIndex : uint { UNDO_ACTION, REDO_ACTION };
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -132,6 +125,9 @@ private:
 private:
     void buildUpRibbonBar();
 
+    void updateTipMessage(const QString &msg);
+    void clearTipMessage();
+
 private slots:
     void on_new();
     void on_open();
@@ -139,7 +135,6 @@ private slots:
     void on_saveas();
     void on_export();
     void on_close();
-    void on_setting();
 
     void on_undo();
     void on_redo();
@@ -191,9 +186,10 @@ private:
     RibbonTabContent *buildAboutPage(RibbonTabContent *tab);
 
     GifFile::ErrorCode readGif(const QString &gif);
-    bool writeGif(const QString &gif, unsigned int loopCount = 0,
-                  const QString &comment = QString());
-    bool exportGifFrames(const QString &dirPath, const char *ext);
+    bool writeGif(const QString &gif, QString &comment,
+                  unsigned int loopCount = 0);
+    bool exportGifFrames(const QString &dirPath, const char *ext,
+                         bool isGlobal);
     bool loadfromImages(const QStringList &filenames, int defaultDelay,
                         qsizetype index = 0, const QSize &size = QSize());
     bool loadfromGifs(const QStringList &gifs, qsizetype index,
@@ -209,18 +205,27 @@ private:
     void updatePlayState();
 
     QVector<int> getSelectedIndices() const;
+    QVector<int> getAllFrameIndices() const;
+    bool isGLobalOp() const;
+    void updateGlobalMark();
+
     void loadCacheIcon();
     void updateGifMessage();
 
     int getNewFrameInterval();
 
 protected:
-    void closeEvent(QCloseEvent *event) override;
+    virtual void closeEvent(QCloseEvent *event) override;
+    virtual void keyPressEvent(QKeyEvent *event) override;
+    virtual void keyReleaseEvent(QKeyEvent *event) override;
+    virtual void focusInEvent(QFocusEvent *event) override;
+    virtual void enterEvent(QEnterEvent *event) override;
 
 private:
     Ribbon *m_ribbon = nullptr;
     QStatusBar *m_status = nullptr;
 
+    QLabel *_status = nullptr;
     QSplitter *_splitter = nullptr;
     PlayGifManager *_player = nullptr;
     GifEditor *_editor = nullptr;
@@ -232,12 +237,13 @@ private:
     QMenu *m_recentMenu = nullptr;
     RecentFileManager *m_recentmanager = nullptr;
 
-    CropGifDialog *_cuttingdlg;
     QToolButton *_btnPlayerStop = nullptr;
-    QList<QWidget *> _playDisWidgets;
+    QToolButton *_btnUndoAction = nullptr;
+    QToolButton *_btnRedoAction = nullptr;
 
+    QList<QWidget *> _playDisWidgets;
+    QList<QToolButton *> _gTools;
     QList<QWidget *> m_editStateWidgets;
-    QMap<ToolButtonIndex, QToolButton *> m_toolBtneditors;
 
     QUndoStack undo;
 
@@ -245,5 +251,6 @@ private:
     QIcon _infoUnsaved;
 
     QToolButton *m_iSaved = nullptr;
+    QToolButton *m_iBatch = nullptr;
 };
 #endif // MAINWINDOW_H

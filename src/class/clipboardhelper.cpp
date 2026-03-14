@@ -22,7 +22,9 @@
 #include <QBuffer>
 #include <QClipboard>
 #include <QDataStream>
+#include <QDir>
 #include <QMimeData>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 
 bool ClipBoardHelper::setImageFrames(
@@ -75,7 +77,10 @@ void ClipBoardHelper::getImageFrames(
         QImage image;
         s >> delay >> image;
 
-        QTemporaryFile tfile(QStringLiteral("frame_XXXXXX.png"));
+        QDir tmpDir(
+            QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+        QTemporaryFile tfile(
+            tmpDir.absoluteFilePath(QStringLiteral("frame_XXXXXX.png")));
         tfile.setAutoRemove(false);
         if (!tfile.open()) {
             continue;

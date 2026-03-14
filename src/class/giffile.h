@@ -142,6 +142,8 @@ public:
 
     static int delayLimitMax();
 
+    void setComment(const QString &newComment);
+
 private:
     QSize m_frameSize;
     QVector<QSharedPointer<GifFrame>> m_framesData;

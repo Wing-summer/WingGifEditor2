@@ -42,9 +42,8 @@ void DelayFrameCommand::undo() {
 
 void DelayFrameCommand::redo() {
     auto gif = model();
-    auto total = gif->frameCount();
-    for (qsizetype i = 0; i < total; ++i) {
-        gif->setFrameDelay(i, _newdelay);
+    for (auto pidx = _olddelay.keyBegin(); pidx != _olddelay.keyEnd(); ++pidx) {
+        gif->setFrameDelay(*pidx, _newdelay);
     }
 }
 

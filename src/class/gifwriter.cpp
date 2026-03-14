@@ -19,8 +19,7 @@
 
 #include <QPainter>
 
-GifWriter::GifWriter(const QString &filename, QObject *parent)
-    : QObject(parent), m_filename(filename) {}
+GifWriter::GifWriter(QObject *parent) : QObject(parent) {}
 
 bool GifWriter::save(
     const QString &filename, unsigned int loopCount, qsizetype frameCount,
@@ -101,11 +100,11 @@ bool GifWriter::save(
 
 void GifWriter::clear() {}
 
-QString GifWriter::extString() const { return m_extString; }
+QString GifWriter::extString() const { return QString::fromUtf8(m_extString); }
 
 void GifWriter::setExtString(const QString &newExtString) {
     auto buf = newExtString.toUtf8();
-    m_extString = buf.mid(255);
+    m_extString = buf.left(255);
 }
 
 bool GifWriter::closeEHandle(GifFileType *handle) {

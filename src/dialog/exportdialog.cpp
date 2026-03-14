@@ -28,7 +28,8 @@
 #include <QStandardPaths>
 #include <QVBoxLayout>
 
-ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
+ExportDialog::ExportDialog(bool isGlobal, QWidget *parent)
+    : FramelessDialogBase(parent) {
     auto widget = new QWidget(this);
     auto layout = new QVBoxLayout(widget);
     layout->addWidget(new QLabel(tr("ChooseFolder"), this));
@@ -121,7 +122,8 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
     layout->addWidget(dbbox);
 
     buildUpContent(widget);
-    setWindowTitle(tr("Export"));
+    setWindowTitle(tr("Export") +
+                   (isGlobal ? tr("(Global)") : tr("(Selected)")));
 }
 
 ExportResult ExportDialog::getResult() { return res; }

@@ -44,10 +44,10 @@ void RemoveFrameCommand::undo() {
     }
 
     if (auto lv = gif->linkedListView(); lv && !_indices.isEmpty()) {
-        const auto target =
-            qBound(0, _indices.last(), static_cast<int>(gif->frameCount() - 1));
-        if (target >= 0) {
-            lv->setCurrentIndex(gif->index(target));
+        lv->clearSelection();
+        for (auto i : std::as_const(_indices)) {
+            lv->selectionModel()->select(gif->index(i),
+                                         QItemSelectionModel::Select);
         }
     }
 }
@@ -62,6 +62,7 @@ void RemoveFrameCommand::redo() {
     }
 
     if (auto lv = gif->linkedListView(); lv && !_indices.isEmpty()) {
+        lv->clearSelection();
         auto l = _indices.last();
         const auto c = static_cast<int>(gif->frameCount());
         if (c > 0) {

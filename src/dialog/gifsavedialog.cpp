@@ -17,12 +17,14 @@
 
 #include "gifsavedialog.h"
 
+#include <QCheckBox>
+#include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include <QDialogButtonBox>
-
-GifSaveDialog::GifSaveDialog(QWidget *parent) : FramelessDialogBase(parent) {
+GifSaveDialog::GifSaveDialog(const QString &comment, QWidget *parent)
+    : FramelessDialogBase(parent) {
     auto widget = new QWidget(this);
     auto layout = new QVBoxLayout(widget);
 
@@ -34,14 +36,24 @@ GifSaveDialog::GifSaveDialog(QWidget *parent) : FramelessDialogBase(parent) {
     _loop->setValue(0);
     clayout->addRow(tr("Loop"), _loop);
 
+    auto cmtLayout = new QHBoxLayout;
     _comment = new QLineEdit(this);
     _comment->setMinimumWidth(200);
-    _comment->setText(QStringLiteral("Made by WingGifEditor2"));
-    clayout->addRow(tr("Comment"), _comment);
+    cmtLayout->addWidget(_comment);
+    auto cb = new QCheckBox(this);
+    cmtLayout->addWidget(cb);
+    connect(cb, &QCheckBox::toggled, _comment, &QLineEdit::setEnabled);
+    clayout->addRow(tr("Comment"), cmtLayout);
+
+    if (comment.isEmpty()) {
+        _comment->setText(QLatin1String("Made by WingGifEditor2"));
+        _comment->setEnabled(false);
+        cb->setChecked(false);
+    } else {
+        cb->setChecked(true);
+    }
 
     layout->addLayout(clayout);
-    layout->addSpacing(10);
-
     layout->addWidget(new QLabel(tr("ZeroIsLoop"), this));
     layout->addSpacing(20);
 
@@ -64,7 +76,7 @@ GifSaveResult GifSaveDialog::getResult() const { return _res; }
 
 void GifSaveDialog::on_accept() {
     _res.loop = _loop->value();
-    _res.comment = _comment->text();
+    _res.comment = _comment->isEnabled() ? _comment->text() : QString{};
     done(1);
 }
 

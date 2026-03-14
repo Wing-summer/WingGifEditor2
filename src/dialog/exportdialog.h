@@ -35,7 +35,7 @@ struct ExportResult {
 class ExportDialog : public FramelessDialogBase {
     Q_OBJECT
 public:
-    ExportDialog(QWidget *parent = nullptr);
+    ExportDialog(bool isGlobal, QWidget *parent = nullptr);
     ExportResult getResult();
 
 private:

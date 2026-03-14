@@ -190,6 +190,10 @@ int GifContentModel::delay(qsizetype index) const { return _file.delay(index); }
 
 QString GifContentModel::comment() const { return _file.comment(); }
 
+void GifContentModel::setComment(const QString &comment) {
+    _file.setComment(comment);
+}
+
 int GifContentModel::width() const { return _file.width(); }
 
 int GifContentModel::height() const { return _file.height(); }

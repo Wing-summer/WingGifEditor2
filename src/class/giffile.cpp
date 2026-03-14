@@ -405,3 +405,5 @@ bool GifFile::isValidGifFrame(const QImage &image, int delay) {
 int GifFile::delayLimitMin() { return 10; }
 
 int GifFile::delayLimitMax() { return 65530; }
+
+void GifFile::setComment(const QString &newComment) { m_comment = newComment; }

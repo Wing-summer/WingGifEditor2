@@ -21,18 +21,21 @@
 #include "control/aspectratiopixmaplabel.h"
 #include "framelessdialogbase.h"
 
-#include <QDialog>
+#include <QFileSystemWatcher>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QMainWindow>
-#include <QObject>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 class NewDialog : public FramelessDialogBase {
     Q_OBJECT
 public:
     NewDialog(QWidget *parent = nullptr);
-    QStringList getResult();
+
+    QStringList getFilenames();
+
+    QSize getGifFrameSize();
 
 private:
     void on_accept();
@@ -42,11 +45,14 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
+    QFileSystemWatcher *_watcher;
     QStringList filenames;
 
     QListWidget *imgslist;
     AspectRatioPixmapLabel *imgview;
-    QLabel *imgsize;
+
+    QSpinBox *sbimgWidth;
+    QSpinBox *sbimgHeight;
 };
 
 #endif // NEWDIALOG_H

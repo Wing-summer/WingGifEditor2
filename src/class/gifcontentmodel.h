@@ -62,6 +62,7 @@ public:
     int delay(qsizetype index) const;
 
     QString comment() const;
+    void setComment(const QString &comment);
 
     int width() const;
 

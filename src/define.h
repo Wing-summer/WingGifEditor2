@@ -22,6 +22,6 @@
 
 constexpr auto FRAME_COUNT_LIMIT = 400;
 constexpr auto FRAME_DEFAULT_DELAY = 40;
-constexpr auto FRAME_MAX_SIZE = UINT16_MAX;
+constexpr int FRAME_MAX_SIZE = UINT16_MAX;
 
 #endif // DEFINE_H

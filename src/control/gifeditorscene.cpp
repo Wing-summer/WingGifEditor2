@@ -51,10 +51,13 @@ GifEditorScene::GifEditorScene(const QImage &img, QObject *parent)
 
 GifEditorScene::~GifEditorScene() { sel->deleteLater(); }
 
-bool GifEditorScene::isCuttingMode() { return sel->cropperVisible(); }
+bool GifEditorScene::isCuttingMode() const { return sel->cropperVisible(); }
 
 void GifEditorScene::setCuttingMode(bool value) {
     sel->setCropperVisible(value);
+    if (value) {
+        emit selRectChanged(sel->selRect());
+    }
 }
 
 void GifEditorScene::setFrameImg(const QImage &img) {
@@ -87,6 +90,7 @@ QImage GifEditorScene::renderedImage() const {
 
 void GifEditorScene::setSelRect(int x, int y, int w, int h) {
     sel->setSelRect(x, y, w, h);
+    emit selRectChanged(selRect());
 }
 
 double GifEditorScene::getLuminance(const QColor &color) {

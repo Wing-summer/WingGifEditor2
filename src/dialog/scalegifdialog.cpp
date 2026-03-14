@@ -28,7 +28,6 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     : FramelessDialogBase(parent) {
     auto widget = new QWidget(this);
     auto layout = new QVBoxLayout(widget);
-    layout->addSpacing(3);
 
     auto group = new QButtonGroup(this);
     group->setExclusive(true);
@@ -39,7 +38,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
 
     int id = 0;
 
-    auto b = new QPushButton(QStringLiteral("Unlock"), this);
+    auto b = new QPushButton(tr("Unlock"), this);
     b->setCheckable(true);
     connect(b, &QPushButton::toggled, this, [=](bool b) {
         if (b) {
@@ -49,7 +48,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     group->addButton(b, id++);
     buttonLayout->addWidget(b);
 
-    b = new QPushButton(QStringLiteral("Lock"), this);
+    b = new QPushButton(tr("Lock"), this);
     b->setCheckable(true);
     connect(b, &QPushButton::toggled, this, [=](bool b) {
         if (b) {
@@ -61,10 +60,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     b->setChecked(true);
     layout->addWidget(btnBox);
 
-    layout->addSpacing(10);
     layout->addWidget(new QLabel(tr("Width"), this));
-    layout->addSpacing(3);
-
     _oldwidth = size.width();
 
     sbwidth = new QSpinBox(this);
@@ -79,9 +75,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     });
 
     layout->addWidget(sbwidth);
-    layout->addSpacing(5);
     layout->addWidget(new QLabel(tr("Height"), this));
-    layout->addSpacing(3);
 
     _oldheight = size.height();
 

@@ -27,7 +27,7 @@ public:
     GifEditorScene(const QImage &img, QObject *parent = nullptr);
     virtual ~GifEditorScene();
 
-    bool isCuttingMode();
+    bool isCuttingMode() const;
     void setCuttingMode(bool value);
 
     void setFrameImg(const QImage &img);

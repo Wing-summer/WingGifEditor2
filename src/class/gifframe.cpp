@@ -54,5 +54,5 @@ int GifFrame::delay() const { return _delay; }
 void GifFrame::setDelay(int newDelay) {
     Q_ASSERT(newDelay > 0);
     auto div = std::div(newDelay, 10);
-    _delay = (div.quot + (div.quot >= 5 ? 1 : 0)) * 10;
+    _delay = (div.quot + (div.rem >= 5 ? 1 : 0)) * 10;
 }

@@ -299,8 +299,7 @@ private:
     };
 
 public:
-    explicit GifWriter(const QString &filename = QString(),
-                       QObject *parent = nullptr);
+    explicit GifWriter(QObject *parent = nullptr);
 
     bool
     save(const QString &filename, unsigned int loopCount, qsizetype frameCount,
@@ -330,7 +329,6 @@ private:
     std::pair<QImage, QRect> diffImage(const QImage &key, const QImage &img);
 
 private:
-    QString m_filename;
     QByteArray m_extString;
 };
 

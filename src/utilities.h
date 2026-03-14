@@ -23,7 +23,6 @@
 #include <QFileInfo>
 #include <QIcon>
 #include <QScreen>
-#include <QStandardPaths>
 #include <QWidget>
 
 Q_DECL_UNUSED static inline QString NAMEICONRES(const QString &name) {
@@ -72,11 +71,6 @@ public:
         auto screen = qApp->primaryScreen()->availableSize();
         window->move((screen.width() - window->width()) / 2,
                      (screen.height() - window->height()) / 2);
-    }
-
-    inline static QString getAppDataPath() {
-        return QStandardPaths::writableLocation(
-            QStandardPaths::AppDataLocation);
     }
 
     inline static QString getAbsoluteDirPath(const QString &fileName) {
