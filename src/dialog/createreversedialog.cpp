@@ -16,6 +16,7 @@
 */
 
 #include "createreversedialog.h"
+#include "utilities.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 
@@ -51,6 +52,7 @@ CreateReverseDialog::CreateReverseDialog(int max, QWidget *parent)
 
     buildUpContent(widget);
     setWindowTitle(tr("CreateReverseDialog"));
+    setWindowIcon(ICONRES(QStringLiteral("reverseplus")));
 }
 
 ReverseResult CreateReverseDialog::getResult() { return res; }

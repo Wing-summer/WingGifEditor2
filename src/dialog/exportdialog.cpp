@@ -18,6 +18,7 @@
 #include "exportdialog.h"
 
 #include "class/wingfiledialog.h"
+#include "utilities.h"
 
 #include <QDialogButtonBox>
 #include <QDir>
@@ -124,6 +125,7 @@ ExportDialog::ExportDialog(bool isGlobal, QWidget *parent)
     buildUpContent(widget);
     setWindowTitle(tr("Export") +
                    (isGlobal ? tr("(Global)") : tr("(Selected)")));
+    setWindowIcon(ICONRES(QStringLiteral("export")));
 }
 
 ExportResult ExportDialog::getResult() { return res; }

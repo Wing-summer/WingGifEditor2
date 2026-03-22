@@ -16,6 +16,7 @@
 */
 
 #include "scalegifdialog.h"
+#include "utilities.h"
 
 #include <QButtonGroup>
 #include <QDialogButtonBox>
@@ -108,6 +109,7 @@ ScaleGIFDialog::ScaleGIFDialog(QSize size, QWidget *parent)
     buildUpContent(widget);
 
     setWindowTitle(tr("ScaleGIFDialog"));
+    setWindowIcon(ICONRES(QStringLiteral("scale")));
 }
 
 ScaleResult ScaleGIFDialog::getResult() { return res; }

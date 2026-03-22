@@ -19,9 +19,13 @@
 #include <QApplication>
 
 int main(int argc, char *argv[]) {
-    AppManager a(argc, argv);
-    auto w = a.mainWindow();
-    w->show();
-    Utilities::moveToCenter(w);
-    return a.exec();
+    try {
+        AppManager a(argc, argv);
+        auto w = a.mainWindow();
+        w->show();
+        Utilities::moveToCenter(w);
+        return a.exec();
+    } catch (int error) {
+        return error;
+    }
 }

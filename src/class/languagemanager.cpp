@@ -16,6 +16,9 @@
 */
 
 #include "languagemanager.h"
+#include "settingmanager.h"
+
+#include "class/wingmessagebox.h"
 
 #include <QApplication>
 #include <QDir>
@@ -29,6 +32,9 @@ LanguageManager &LanguageManager::instance() {
 }
 
 LanguageManager::LanguageManager() {
+    m_langMap = {{"zh_CN", QStringLiteral("简体中文")},
+                 {"zh_TW", QStringLiteral("繁體中文")}};
+
     auto langPath =
         qApp->applicationDirPath() + QDir::separator() + QStringLiteral("lang");
 
@@ -50,22 +56,20 @@ LanguageManager::LanguageManager() {
         m_localeMap.insert(lang, locale);
     }
 
-    _defaultLocale = QLocale::system();
+    auto lang = SettingManager::instance().defaultLang();
+    if (lang.isEmpty()) {
+        _defaultLocale = QLocale::system();
+    } else {
+        QLocale locale(lang);
+        if (locale == QLocale::c()) {
+            _defaultLocale = QLocale::system();
+        } else {
+            _defaultLocale = locale;
+        }
+    }
 
     if (m_langs.isEmpty()) {
-        if (QLocale::China == _defaultLocale.territory()) {
-            QMessageBox::critical(
-                nullptr, QStringLiteral("程序损坏"),
-                QStringLiteral(
-                    "语言文件已损坏，请尝试重装软件以解决这个问题。"));
-        } else {
-            QMessageBox::critical(
-                nullptr, QStringLiteral("Corruption"),
-                QStringLiteral("The language file has been damaged. "
-                               "Please try reinstalling the software to "
-                               "solve the problem."));
-        }
-        qApp->exit(-1);
+        abortAndExit();
     }
 
     bool found = false;
@@ -111,13 +115,38 @@ LanguageManager::LanguageManager() {
         qApp->installTranslator(translator);
     }
 
-    m_langMap = {{"zh_CN", tr("Chinese(Simplified)")}};
-
     for (auto &lang : m_langs) {
         m_langsDisplay << m_langMap.value(lang, lang);
     }
 }
 
+void LanguageManager::abortAndExit() {
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    if (QLocale::China == _defaultLocale.territory()
+#else
+    if (QLocale::China == _defaultLocale.country()
+#endif
+    ) {
+        WingMessageBox::critical(
+            nullptr, QStringLiteral("程序损坏"),
+            QStringLiteral("语言文件已损坏，请尝试重装软件以解决这个问题。"));
+    } else {
+        WingMessageBox::critical(
+            nullptr, QStringLiteral("Corruption"),
+            QStringLiteral("The language file has been damaged. "
+                           "Please try reinstalling the software to "
+                           "solve the problem."));
+    }
+
+    throw -1;
+}
+
 QLocale LanguageManager::defaultLocale() const { return _defaultLocale; }
+
+QStringList LanguageManager::langs() const { return m_langs; }
+
+QString LanguageManager::langDisplay(const QString &lang) const {
+    return m_langMap.value(lang, lang);
+}
 
 QStringList LanguageManager::langsDisplay() const { return m_langsDisplay; }

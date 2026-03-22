@@ -16,6 +16,7 @@
 */
 
 #include "reduceframedialog.h"
+#include "utilities.h"
 #include <QShortcut>
 
 #include <QVBoxLayout>
@@ -62,6 +63,7 @@ ReduceFrameDialog::ReduceFrameDialog(int max, QWidget *parent)
 
     buildUpContent(widget);
     setWindowTitle(tr("ReduceFrameDialog"));
+    setWindowIcon(ICONRES(QStringLiteral("rmframe")));
 }
 
 ReduceResult ReduceFrameDialog::getResult() { return res; }

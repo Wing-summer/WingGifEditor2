@@ -24,6 +24,7 @@
 #include "class/languagemanager.h"
 #include "class/settingmanager.h"
 #include "class/skinmanager.h"
+#include "utilities.h"
 
 EditorSettingDialog::EditorSettingDialog(QWidget *parent)
     : FramelessDialogBase(parent), ui(new Ui::EditorSettingDialog) {
@@ -33,7 +34,17 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
 
     auto set = &SettingManager::instance();
     ui->cbLanguage->addItem(tr("SystemDefault"));
-    ui->cbLanguage->addItems(LanguageManager::instance().langsDisplay());
+
+    auto &lang = LanguageManager::instance();
+    const auto langs = lang.langs();
+    for (const auto &l : langs) {
+        ui->cbLanguage->addItem(lang.langDisplay(l), l);
+    }
+    connect(ui->cbLanguage, &QComboBox::currentIndexChanged, set,
+            [this](int index) {
+                auto data = ui->cbLanguage->itemData(index).toString();
+                SettingManager::instance().setDefaultLang(data);
+            });
 
     auto e = QMetaEnum::fromType<SkinManager::Theme>();
     for (int i = 0; i < e.keyCount(); ++i) {
@@ -68,6 +79,7 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
     reload();
 
     setWindowTitle(tr("Setting"));
+    setWindowIcon(ICONRES(QStringLiteral("setting")));
 }
 
 EditorSettingDialog::~EditorSettingDialog() { delete ui; }

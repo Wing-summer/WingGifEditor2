@@ -196,7 +196,8 @@ set(PROJECT_SOURCES
 
 include_directories("${CMAKE_SOURCE_DIR}/src")
 
-set(TRANSLATION_FILES "lang/${PROJECT_NAME}_zh_CN.ts")
+set(TRANSLATION_FILES "lang/${PROJECT_NAME}_zh_CN.ts"
+                      "lang/${PROJECT_NAME}_zh_TW.ts")
 set(QM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/lang")
 file(MAKE_DIRECTORY ${QM_OUTPUT_DIR})
 
@@ -216,8 +217,9 @@ else()
 endif()
 
 target_include_directories(
-    ${CMAKE_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty"
-                                  "${CMAKE_CURRENT_SOURCE_DIR}")
+    ${CMAKE_PROJECT_NAME}
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" "${CMAKE_CURRENT_SOURCE_DIR}
+    ")
 
 if(WINGGIF_USE_FRAMELESS)
     target_link_libraries(

@@ -370,6 +370,7 @@ void MainWindow::on_save() {
     updateTipMessage(tr("Saving..."));
 
     GifSaveDialog d(_model->comment());
+    d.setWindowIcon(ICONRES(QStringLiteral("save")));
     GifSaveResult r;
     if (d.exec()) {
         r = d.getResult();
@@ -399,6 +400,7 @@ void MainWindow::on_saveas() {
 
     updateTipMessage(tr("SavingAs..."));
     GifSaveDialog d(_model->comment());
+    d.setWindowIcon(ICONRES(QStringLiteral("saveas")));
     GifSaveResult r;
     if (d.exec()) {
         r = d.getResult();
@@ -424,9 +426,9 @@ void MainWindow::on_saveas() {
         _model->setComment(r.comment);
         _curfilename = filename;
         m_recentmanager->addRecentFile(filename);
-        Toast::toast(this, NAMEICONRES("saveas"), tr("SaveAsSuccess"));
+        Toast::toast(this, NAMEICONRES("saveas"), tr("SaveSuccess"));
     } else {
-        Toast::toast(this, NAMEICONRES("saveas"), tr("SaveAsFail"));
+        Toast::toast(this, NAMEICONRES("saveas"), tr("SaveFail"));
     }
 
     clearTipMessage();
@@ -1316,7 +1318,7 @@ bool MainWindow::loadfromGifs(const QStringList &gifs, qsizetype index,
                             delay);
                     });
             } else {
-                datas.append(reader.begin(), reader.end());
+                datas.append(reader.cbegin(), reader.cend());
             }
         }
     }

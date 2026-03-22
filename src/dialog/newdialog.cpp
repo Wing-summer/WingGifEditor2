@@ -81,7 +81,7 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     connect(b, &QPushButton::clicked, this, [=] {
         auto indices = imgslist->selectionModel()->selectedRows();
         QList<int> ins;
-        for (auto i : indices) {
+        for (auto i : std::as_const(indices)) {
             ins.append(i.row());
         }
         std::sort(ins.begin(), ins.end(), std::greater<int>());
@@ -158,6 +158,7 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     auto w = new QWidget(this);
     auto hbox = new QHBoxLayout(w);
     imgslist = new QListWidget(this);
+    imgslist->setMinimumWidth(280);
     hbox->addWidget(imgslist);
     auto vbox = new QVBoxLayout(w);
     hbox->addLayout(vbox);
@@ -165,7 +166,7 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     imgview->setFixedSize(220, 220);
     imgview->setScaledContents(true);
     imgview->setPixmap(nopic);
-    vbox->addWidget(imgview);
+    vbox->addWidget(imgview, 0, Qt::AlignCenter);
     vbox->addSpacing(5);
 
     auto slayout = new QHBoxLayout;
@@ -236,6 +237,7 @@ NewDialog::NewDialog(QWidget *parent) : FramelessDialogBase(parent) {
     buildUpContent(widget);
 
     setWindowTitle(tr("New"));
+    setWindowIcon(ICONRES("new"));
 }
 
 QStringList NewDialog::getFilenames() { return filenames; }

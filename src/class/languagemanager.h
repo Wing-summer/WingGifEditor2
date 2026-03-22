@@ -35,8 +35,14 @@ public:
 
     QLocale defaultLocale() const;
 
+    QStringList langs() const;
+
+    QString langDisplay(const QString &lang) const;
+
 private:
     LanguageManager();
+
+    void abortAndExit();
 
     Q_DISABLE_COPY(LanguageManager)
 

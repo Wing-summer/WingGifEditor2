@@ -70,6 +70,7 @@ FileInfoDialog::FileInfoDialog(const QString &filename, const QSize &gifSize,
     buildUpContent(widget);
 
     setWindowTitle(tr("FileInfo"));
+    setWindowIcon(ICONRES(QStringLiteral("info")));
     this->resize(500, 450);
 }
 
