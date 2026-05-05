@@ -15,33 +15,13 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef ASQTGEOMETRYBINDING_H
+#define ASQTGEOMETRYBINDING_H
 
-#include "dialog/mainwindow.h"
+#ifndef ANGELSCRIPT_H
+#include <angelscript.h>
+#endif
 
-#include <QApplication>
-#include <QElapsedTimer>
+void RegisterASQtGeometryTypes(asIScriptEngine *engine);
 
-class AppManager : public QApplication {
-    Q_OBJECT
-public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
-
-    static AppManager *instance();
-
-    MainWindow *mainWindow() const;
-
-    quint64 currentMSecsSinceEpoch();
-
-public slots:
-    void openFile(const QString &file);
-
-private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
-};
-
-#endif // APPMANAGER_H
+#endif // ASQTGEOMETRYBINDING_H

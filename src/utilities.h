@@ -24,7 +24,10 @@
 #include <QFileInfo>
 #include <QIcon>
 #include <QLabel>
+#include <QMimeDatabase>
+#include <QMimeType>
 #include <QScreen>
+#include <QStandardPaths>
 #include <QWidget>
 
 Q_DECL_UNUSED static inline QString NAMEICONRES(const QString &name) {
@@ -90,6 +93,21 @@ public:
                 w->setToolTip(QApplication::tr("OptionNeedRestart"));
             }
         }
+    }
+
+    inline static bool isTextFile(const QMimeType &type) {
+        return type.inherits(QStringLiteral("text/plain"));
+    }
+
+    inline static bool isTextFile(const QFileInfo &info) {
+        QMimeDatabase db;
+        auto t = db.mimeTypeForFile(info, QMimeDatabase::MatchContent);
+        return isTextFile(t);
+    }
+
+    inline static QString getAppDataPath() {
+        return QStandardPaths::writableLocation(
+            QStandardPaths::AppDataLocation);
     }
 };
 

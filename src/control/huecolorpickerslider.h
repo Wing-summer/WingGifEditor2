@@ -15,33 +15,37 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef HUECOLORPICKERSLIDER_H
+#define HUECOLORPICKERSLIDER_H
 
-#include "dialog/mainwindow.h"
+#include <QWidget>
 
-#include <QApplication>
-#include <QElapsedTimer>
+#include "qcolorpicker_slider.hpp"
 
-class AppManager : public QApplication {
+class HueColorPickerSlider : public QColorPickerSlider {
     Q_OBJECT
 public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
+    explicit HueColorPickerSlider(Qt::Orientation orientation,
+                                  QWidget *parent = nullptr);
 
-    static AppManager *instance();
+    QColor color() const;
+    void setColor(const QColor &newColor);
 
-    MainWindow *mainWindow() const;
-
-    quint64 currentMSecsSinceEpoch();
-
-public slots:
-    void openFile(const QString &file);
+signals:
+    void colorChanged(QColor color);
 
 private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
+    QColor redColor(int s, int v);
+    QColor yellowColor(int s, int v);
+    QColor greenColor(int s, int v);
+    QColor cyanColor(int s, int v);
+    QColor blueColor(int s, int v);
+    QColor magentaColor(int s, int v);
+
+    QColor color(Qt::GlobalColor color, int s, int v);
+
+private:
+    QColor _color;
 };
 
-#endif // APPMANAGER_H
+#endif // HUECOLORPICKERSLIDER_H

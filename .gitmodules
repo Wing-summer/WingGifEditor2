@@ -7,3 +7,7 @@
 [submodule "3rdparty/qwindowkit"]
 	path = 3rdparty/qwindowkit
 	url = git@github.com:Wing-summer/qwindowkit.git
+[submodule "3rdparty/angelscript"]
+	path = 3rdparty/angelscript
+	url = git@github.com:Wing-summer/angelscript.git
+	branch = stable

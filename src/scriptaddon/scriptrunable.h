@@ -1,5 +1,5 @@
 /*==============================================================================
-** Copyright (C) 2024-2027 WingSummer
+** Copyright (C) 2026-2029 WingSummer
 **
 ** This program is free software: you can redistribute it and/or modify it under
 ** the terms of the GNU Affero General Public License as published by the Free
@@ -15,33 +15,27 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef SCRIPTRUNABLE_H
+#define SCRIPTRUNABLE_H
 
-#include "dialog/mainwindow.h"
+#include "contextmgr.h"
 
-#include <QApplication>
-#include <QElapsedTimer>
+#include <QObject>
 
-class AppManager : public QApplication {
+class ScriptRunable : public QObject {
     Q_OBJECT
 public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
+    ScriptRunable(CContextMgr *mgr);
+    virtual ~ScriptRunable();
 
-    static AppManager *instance();
+public:
+    void start();
 
-    MainWindow *mainWindow() const;
-
-    quint64 currentMSecsSinceEpoch();
-
-public slots:
-    void openFile(const QString &file);
+private slots:
+    void step();
 
 private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
+    CContextMgr *_mgr;
 };
 
-#endif // APPMANAGER_H
+#endif // SCRIPTRUNABLE_H

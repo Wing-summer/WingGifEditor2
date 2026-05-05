@@ -15,33 +15,29 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef SCRIPTQSTRING_H
+#define SCRIPTQSTRING_H
 
-#include "dialog/mainwindow.h"
+#ifndef ANGELSCRIPT_H
+// Avoid having to inform include path if header is already include before
+#include "angelscript.h"
+#endif
 
-#include <QApplication>
-#include <QElapsedTimer>
+//---------------------------
+// Compilation settings
+//
 
-class AppManager : public QApplication {
-    Q_OBJECT
-public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
+// This option disables the implicit operators with primitives
+#ifndef AS_NO_IMPL_OPS_WITH_STRING_AND_PRIMITIVE
+#define AS_NO_IMPL_OPS_WITH_STRING_AND_PRIMITIVE 0
+#endif
 
-    static AppManager *instance();
+BEGIN_AS_NAMESPACE
 
-    MainWindow *mainWindow() const;
+void RegisterQString(asIScriptEngine *engine);
+void RegisterQStringUtils(asIScriptEngine *engine);
+void RegisterQStringRegExSupport(asIScriptEngine *engine);
 
-    quint64 currentMSecsSinceEpoch();
+END_AS_NAMESPACE
 
-public slots:
-    void openFile(const QString &file);
-
-private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
-};
-
-#endif // APPMANAGER_H
+#endif // SCRIPTQSTRING_H

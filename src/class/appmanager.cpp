@@ -38,6 +38,7 @@ AppManager::AppManager(int &argc, char *argv[]) : QApplication(argc, argv) {
     SkinManager::instance();
     LanguageManager::instance();
 
+    _timer.start();
     _w = new MainWindow;
 
     if (args.size() > 1) {
@@ -56,5 +57,7 @@ AppManager::~AppManager() {
 AppManager *AppManager::instance() { return _instance; }
 
 MainWindow *AppManager::mainWindow() const { return _w; }
+
+quint64 AppManager::currentMSecsSinceEpoch() { return _timer.elapsed(); }
 
 void AppManager::openFile(const QString &file) { _w->openGif(file); }

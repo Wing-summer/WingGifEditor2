@@ -18,10 +18,46 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
+#include <QtAssert>
+
 #include <cstdint>
 
 constexpr auto FRAME_COUNT_LIMIT = 400;
 constexpr auto FRAME_DEFAULT_DELAY = 40;
 constexpr int FRAME_MAX_SIZE = UINT16_MAX;
+
+namespace AsUserDataType {
+enum AsUserDataType : unsigned int {
+    // internal user data
+    UserData_API,
+    UserData_PluginFn,
+    UserData_StringTypeInfo,
+    UserData_ByteArrayTypeInfo,
+    UserData_JsonValueTypeInfo,
+    UserData_StringListTypeInfo,
+    UserData_CharArrayTypeInfo,
+    UserData_CharTypeInfo,
+    UserData_DictionaryTypeInfo,
+    UserData_DictionaryValueTypeInfo,
+    UserData_AnyTypeInfo,
+    UserData_ArrayTypeInfo,
+
+    // copyable context attribute
+    UserData_CopyAttr_Begin = 100,
+    UserData_Timer,
+    UserData_NeedYeild,
+    UserData_Section_StringPtr,
+    UserData_CopyAttr_End,
+
+    // The AngelScript add-ons have reserved the numbers 1000
+    // through 1999 for this purpose.
+    UserData_Revserved_Begin = 1000,
+    // const asPWORD CONTEXT_MGR = 1002;
+    UserData_ContextMgr = 1002,
+    UserData_Revserved_End = 1999
+};
+}
+
+inline void ASSERT(bool b) { Q_ASSERT(b); }
 
 #endif // DEFINE_H

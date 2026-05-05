@@ -31,6 +31,14 @@
     </message>
 </context>
 <context>
+    <name>ColorPickerDialog</name>
+    <message>
+        <location filename="../src/dialog/colorpickerdialog.ui" line="14"/>
+        <source>ColorPicker</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CreateReverseDialog</name>
     <message>
         <location filename="../src/dialog/createreversedialog.cpp" line="27"/>
@@ -267,6 +275,14 @@
         <location filename="../src/dialog/gifsavedialog.cpp" line="70"/>
         <source>GifSave</source>
         <translation>Save GIF</translation>
+    </message>
+</context>
+<context>
+    <name>HueColorPickerSlider</name>
+    <message>
+        <location filename="../src/control/huecolorpickerslider.cpp" line="45"/>
+        <source>ChooseColor</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -969,7 +985,7 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/utilities.h" line="90"/>
+        <location filename="../src/utilities.h" line="93"/>
         <source>OptionNeedRestart</source>
         <translation>Restart required</translation>
     </message>
@@ -1081,6 +1097,19 @@
         <location filename="../src/dialog/scalegifdialog.cpp" line="111"/>
         <source>ScaleGIFDialog</source>
         <translation>Scale GIF</translation>
+    </message>
+</context>
+<context>
+    <name>ScriptManager</name>
+    <message>
+        <location filename="../src/class/scriptmanager.cpp" line="353"/>
+        <source>ScriptRunning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/class/scriptmanager.cpp" line="353"/>
+        <source>ScriptRunningRequestLastStop?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

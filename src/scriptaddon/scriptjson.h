@@ -15,33 +15,17 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef SCRIPTJSON_H
+#define SCRIPTJSON_H
 
-#include "dialog/mainwindow.h"
+#ifndef ANGELSCRIPT_H
+// Avoid having to inform include path if header is already include before
+#include "angelscript.h"
+#endif
 
-#include <QApplication>
-#include <QElapsedTimer>
+BEGIN_AS_NAMESPACE
 
-class AppManager : public QApplication {
-    Q_OBJECT
-public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
+void RegisterQJson(asIScriptEngine *engine);
 
-    static AppManager *instance();
-
-    MainWindow *mainWindow() const;
-
-    quint64 currentMSecsSinceEpoch();
-
-public slots:
-    void openFile(const QString &file);
-
-private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
-};
-
-#endif // APPMANAGER_H
+END_AS_NAMESPACE
+#endif // SCRIPTJSON_H

@@ -30,6 +30,9 @@ option(WINGGIF_USE_FRAMELESS "Use borderless windows to ensure UI uniformity"
        TRUE)
 
 add_subdirectory(3rdparty/giflib)
+add_subdirectory(3rdparty/angelscript/sdk/angelscript/projects/cmake)
+
+include_directories(3rdp)
 
 if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /utf-8")
@@ -87,6 +90,9 @@ set(DIALOG_SRC
     src/dialog/aboutsoftwaredialog.cpp
     src/dialog/aboutsoftwaredialog.h
     src/dialog/aboutsoftwaredialog.ui
+    src/dialog/colorpickerdialog.cpp
+    src/dialog/colorpickerdialog.h
+    src/dialog/colorpickerdialog.ui
     src/dialog/fileinfodialog.cpp
     src/dialog/fileinfodialog.h
     src/dialog/gifsavedialog.h
@@ -127,10 +133,19 @@ set(CLS_SRC
     src/class/wingprogressdialog.h
     src/class/settingmanager.cpp
     src/class/settingmanager.h
+    src/class/scriptmanager.cpp
+    src/class/scriptmanager.h
+    src/class/compositeiconengine.cpp
+    src/class/compositeiconengine.h
     src/class/qtlockedfile.h
     src/class/qtlockedfile.cpp
+    src/class/angelscripthelper.h
+    src/class/scriptmachine.cpp
+    src/class/scriptmachine.h
     src/class/gifframe.h
     src/class/gifframe.cpp
+    src/class/asgifimage.h
+    src/class/asgifimage.cpp
     src/class/waitingloop.h
     src/class/waitingloop.cpp)
 
@@ -139,6 +154,10 @@ set(CONTORL_SRC
     src/control/gifcontentgallery.cpp
     src/control/toast.cpp
     src/control/toast.h
+    src/control/huecolorpickerslider.cpp
+    src/control/huecolorpickerslider.h
+    src/control/qcolorpicker_slider.cpp
+    src/control/qcolorpicker_slider.hpp
     src/control/aspectratiopixmaplabel.h
     src/control/aspectratiopixmaplabel.cpp
     src/control/imagecropper/imagecropper_e.h
@@ -182,16 +201,62 @@ set(SET_SRC
     src/settings/editorsettingdialog.cpp src/settings/editorsettingdialog.h
     src/settings/editorsettingdialog.ui)
 
+set(ANGEL_SCRIPT_ADDON_ROOT
+    "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/angelscript/sdk/add_on")
+set(ANGEL_SCRIPT_ADDON
+    ${ANGEL_SCRIPT_ADDON_ROOT}/autowrapper/aswrappedcall.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptarray/scriptarray.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptarray/scriptarray.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptgrid/scriptgrid.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptgrid/scriptgrid.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scripthandle/scripthandle.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scripthandle/scripthandle.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scripthelper/scripthelper.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scripthelper/scripthelper.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptmath/scriptmath.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptmath/scriptmath.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptmath/scriptmathcomplex.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptmath/scriptmathcomplex.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptbuilder/scriptbuilder.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/scriptbuilder/scriptbuilder.h
+    ${ANGEL_SCRIPT_ADDON_ROOT}/weakref/weakref.cpp
+    ${ANGEL_SCRIPT_ADDON_ROOT}/weakref/weakref.h)
+
+set(SCRIPT_ADDON_SRC
+    src/scriptaddon/contextmgr.cpp
+    src/scriptaddon/contextmgr.h
+    src/scriptaddon/scriptrunable.h
+    src/scriptaddon/scriptrunable.cpp
+    src/scriptaddon/scriptqstring.h
+    src/scriptaddon/scriptqstring.cpp
+    src/scriptaddon/scriptqdictionary.h
+    src/scriptaddon/scriptqdictionary.cpp
+    src/scriptaddon/scriptregex.h
+    src/scriptaddon/scriptregex.cpp
+    src/scriptaddon/scriptcolor.h
+    src/scriptaddon/scriptcolor.cpp
+    src/scriptaddon/qtgeometrybinding.cpp
+    src/scriptaddon/qtgeometrybinding.h
+    src/scriptaddon/scriptjson.h
+    src/scriptaddon/scriptjson.cpp
+    src/scriptaddon/scriptoptbox.h
+    src/scriptaddon/scriptoptbox.cpp
+    src/scriptaddon/scriptany.cpp
+    src/scriptaddon/scriptany.h)
+
 set(PROJECT_SOURCES
     src/main.cpp
     ${DIALOG_SRC}
     ${CLS_SRC}
     ${CONTORL_SRC}
     ${SET_SRC}
+    ${ANGEL_SCRIPT_ADDON}
+    ${SCRIPT_ADDON_SRC}
     ${CMD_SRC}
     ${WIDGET_FRAME_SRC}
     ${RIBBON_SRC}
     src/utilities.h
+    src/predefgen.h
     src/dbghelper.h
     resources.qrc
     src/define.h
@@ -222,13 +287,15 @@ target_include_directories(
     ${CMAKE_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty"
                                   "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
+target_compile_definitions(WingGifEditor2 PRIVATE AS_PROCESS_METADATA=0)
+
 if(WINGGIF_USE_FRAMELESS)
     target_link_libraries(
         WingGifEditor2 PRIVATE Qt6::Widgets Qt6::Concurrent gif_object_lib
-                               QWKCore QWKWidgets)
+                               QWKCore QWKWidgets angelscript)
 else()
     target_link_libraries(WingGifEditor2 PRIVATE Qt6::Widgets Qt6::Concurrent
-                                                 gif_object_lib)
+                                                 gif_object_lib angelscript)
 endif()
 
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.7.0)

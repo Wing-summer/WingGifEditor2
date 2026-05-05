@@ -15,33 +15,27 @@
 ** =============================================================================
 */
 
-#ifndef APPMANAGER_H
-#define APPMANAGER_H
+#ifndef COMPOSITEICONENGINE_H
+#define COMPOSITEICONENGINE_H
 
-#include "dialog/mainwindow.h"
+#include <QIconEngine>
 
-#include <QApplication>
-#include <QElapsedTimer>
-
-class AppManager : public QApplication {
-    Q_OBJECT
+class CompositeIconEngine : public QIconEngine {
 public:
-    explicit AppManager(int &argc, char *argv[]);
-    virtual ~AppManager();
+    explicit CompositeIconEngine(const QIcon &main, const QIcon &overlay);
 
-    static AppManager *instance();
+public:
+    QIconEngine *clone() const override;
 
-    MainWindow *mainWindow() const;
+    void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode,
+               QIcon::State state) override;
 
-    quint64 currentMSecsSinceEpoch();
-
-public slots:
-    void openFile(const QString &file);
+    QPixmap pixmap(const QSize &size, QIcon::Mode mode,
+                   QIcon::State state) override;
 
 private:
-    MainWindow *_w = nullptr;
-    QElapsedTimer _timer;
-    static AppManager *_instance;
+    QIcon mainIcon;
+    QIcon overlayIcon;
 };
 
-#endif // APPMANAGER_H
+#endif // COMPOSITEICONENGINE_H
