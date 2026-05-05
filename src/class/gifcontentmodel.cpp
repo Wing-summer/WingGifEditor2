@@ -376,7 +376,7 @@ QVariant GifContentModel::data(const QModelIndex &index, int role) const {
     switch (role) {
     case Qt::DisplayRole: {
         auto i = index.row();
-        return QString::number(delay(i)) + QStringLiteral(" ms");
+        return QString(QString::number(delay(i)) + QStringLiteral(" ms"));
     }
     case Qt::DecorationRole: {
         return image(index.row());

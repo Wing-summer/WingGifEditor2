@@ -72,8 +72,9 @@ private:
 
         if (!shortcut.isEmpty()) {
             auto shortCut = new QShortcut(shortcut, this);
-            shortCut->setContext(Qt::WindowShortcut);
+            a->installEventFilter(this);
             connect(shortCut, &QShortcut::activated, a, &QToolButton::click);
+            _scs.insert(a, shortCut);
         }
 
         a->setMenu(menu);
@@ -102,8 +103,9 @@ private:
 
         if (!shortcut.isEmpty()) {
             auto shortCut = new QShortcut(shortcut, this);
-            shortCut->setContext(Qt::WindowShortcut);
+            a->installEventFilter(this);
             connect(shortCut, &QShortcut::activated, a, &QToolButton::click);
+            _scs.insert(a, shortCut);
         }
 
         connect(a, &QToolButton::toggled, this, slot);
@@ -214,6 +216,11 @@ private:
 
     int getNewFrameInterval();
 
+    void setAsNewGif();
+    bool isNewGif() const;
+
+    static bool checkGlobalModifiers(const Qt::KeyboardModifiers &mods);
+
 protected:
     virtual void closeEvent(QCloseEvent *event) override;
     virtual void keyPressEvent(QKeyEvent *event) override;
@@ -244,6 +251,7 @@ private:
     QList<QWidget *> _playDisWidgets;
     QList<QToolButton *> _gTools;
     QList<QWidget *> m_editStateWidgets;
+    QHash<QWidget *, QShortcut *> _scs;
 
     QUndoStack undo;
 
@@ -252,5 +260,9 @@ private:
 
     QToolButton *m_iSaved = nullptr;
     QToolButton *m_iBatch = nullptr;
+
+    // QObject interface
+public:
+    virtual bool eventFilter(QObject *watched, QEvent *event) override;
 };
 #endif // MAINWINDOW_H

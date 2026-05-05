@@ -75,7 +75,7 @@ def update(build_path):
         exit(3)
 
     installer_path = os.path.dirname(os.path.abspath(__file__))
-    projectbase = os.path.abspath(os.path.join(installer_path, ".."))
+    projectbase = os.path.abspath(os.path.join(installer_path, "../.."))
 
     print(Fore.GREEN + ">> Checking file integrity..." + Style.RESET_ALL)
 

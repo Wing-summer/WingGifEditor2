@@ -55,6 +55,8 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
 
     connect(ui->cbNativeTitile, &QCheckBox::toggled, set,
             &SettingManager::setUseNativeTitleBar);
+    connect(ui->cbNativeFileDialog, &QCheckBox::toggled, set,
+            &SettingManager::setUseNativeFileDialog);
 
     ui->cbWinState->addItems({tr("Normal"), tr("Maximized"), tr("FullScreen")});
     connect(ui->cbWinState, &QComboBox::currentIndexChanged, this,
@@ -74,6 +76,11 @@ EditorSettingDialog::EditorSettingDialog(QWidget *parent)
                 SettingManager::instance().setDefaultWinState(state);
             });
 
+    Utilities::addSpecialMark(ui->lblTheme);
+    Utilities::addSpecialMark(ui->lblLanguage);
+    Utilities::addSpecialMark(ui->lblRestartTip);
+    Utilities::addSpecialMark(ui->lblWinState);
+
     buildUpContent(widget);
 
     reload();
@@ -91,7 +98,7 @@ void EditorSettingDialog::reload() {
     ui->cbWinState->blockSignals(true);
 
     auto &set = SettingManager::instance();
-    auto langs = LanguageManager::instance().langsDisplay();
+    auto langs = LanguageManager::instance().langs();
     auto lang = set.defaultLang();
     if (lang.isEmpty()) {
         ui->cbLanguage->setCurrentIndex(0);
@@ -103,6 +110,8 @@ void EditorSettingDialog::reload() {
 
     ui->cbNativeTitile->setChecked(
         SettingManager::instance().useNativeTitleBar());
+    ui->cbNativeFileDialog->setChecked(
+        SettingManager::instance().useNativeFileDialog());
 
     int s;
     switch (set.defaultWinState()) {

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(WingGifEditor2 LANGUAGES CXX)
 
-set(PROJECT_VERSION 1.1.0)
+set(PROJECT_VERSION 1.1.1)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -11,6 +11,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
 
@@ -77,6 +78,8 @@ set(DIALOG_SRC
     src/dialog/createreversedialog.h
     src/dialog/exportdialog.cpp
     src/dialog/exportdialog.h
+    src/dialog/cropgifdialog.cpp
+    src/dialog/cropgifdialog.h
     src/dialog/newdialog.cpp
     src/dialog/newdialog.h
     src/dialog/scalegifdialog.cpp
@@ -194,10 +197,9 @@ set(PROJECT_SOURCES
     src/define.h
     theme/breeze.qrc)
 
-include_directories("${CMAKE_SOURCE_DIR}/src")
-
-set(TRANSLATION_FILES "lang/${PROJECT_NAME}_zh_CN.ts"
-                      "lang/${PROJECT_NAME}_zh_TW.ts")
+set(TRANSLATION_FILES
+    "lang/${PROJECT_NAME}_en_US.ts" "lang/${PROJECT_NAME}_zh_CN.ts"
+    "lang/${PROJECT_NAME}_zh_TW.ts")
 set(QM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/lang")
 file(MAKE_DIRECTORY ${QM_OUTPUT_DIR})
 
@@ -217,9 +219,8 @@ else()
 endif()
 
 target_include_directories(
-    ${CMAKE_PROJECT_NAME}
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" "${CMAKE_CURRENT_SOURCE_DIR}
-    ")
+    ${CMAKE_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty"
+                                  "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 if(WINGGIF_USE_FRAMELESS)
     target_link_libraries(
@@ -229,6 +230,19 @@ else()
     target_link_libraries(WingGifEditor2 PRIVATE Qt6::Widgets Qt6::Concurrent
                                                  gif_object_lib)
 endif()
+
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.7.0)
+    target_compile_definitions(
+        WingGifEditor2
+        PRIVATE QT_NO_CONTEXTLESS_CONNECT QT_RESTRICTED_CAST_FROM_ASCII
+                QT_NO_CAST_TO_ASCII)
+endif()
+
+# for QString contraction optimization
+target_compile_definitions(
+    WingGifEditor2
+    PRIVATE
+    PRIVATE QT_USE_QSTRINGBUILDER)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1. If
 # you are developing for iOS or macOS you should consider setting an explicit,

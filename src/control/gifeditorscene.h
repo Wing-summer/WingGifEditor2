@@ -36,12 +36,14 @@ public:
 
     QSize frameImageSize() const;
 
-    QRectF selRect() const;
-
     QImage renderedImage() const;
+
+    QRectF selRect() const;
+    int selMovement() const;
 
 public slots:
     void setSelRect(int x, int y, int w, int h);
+    void setSelMovement(int newSelMovement);
 
 signals:
     void selRectChanged(const QRectF &rect);
@@ -60,6 +62,12 @@ private:
     ImageCropper *sel;
     QPointF oldpos;
     QGraphicsProxyWidget *gw;
+
+    int _selMovement = 1;
+
+    // QGraphicsScene interface
+protected:
+    virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // GIFEDITORSCENE_H

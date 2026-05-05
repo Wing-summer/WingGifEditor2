@@ -18,6 +18,8 @@
 #include "gifeditor.h"
 #include "utilities.h"
 
+#include "dialog/cropgifdialog.h"
+
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <QGuiApplication>
@@ -111,7 +113,9 @@ void GifEditor::mouseDoubleClickEvent(QMouseEvent *event) {
 
 void GifEditor::keyPressEvent(QKeyEvent *event) {
     if (scene->isCuttingMode()) {
-        if (event->modifiers() == Qt::NoModifier) {
+        auto mod = event->modifiers();
+        if (mod == Qt::NoModifier) {
+            scene->setSelMovement(1);
             auto key = event->key();
             if (key == Qt::Key_Escape) {
                 emit cropFinished(false);
@@ -120,6 +124,10 @@ void GifEditor::keyPressEvent(QKeyEvent *event) {
                 emit cropFinished(true);
                 return;
             }
+        } else if (mod == Qt::ShiftModifier) {
+            scene->setSelMovement(10);
+        } else if (mod == Qt::AltModifier) {
+            scene->setSelMovement(5);
         }
     }
     QGraphicsView::keyPressEvent(event);
@@ -128,6 +136,16 @@ void GifEditor::keyPressEvent(QKeyEvent *event) {
 void GifEditor::contextMenuEvent(QContextMenuEvent *event) {
     if (scene->isCuttingMode()) {
         QMenu menu;
+        menu.addAction(
+            ICONRES(QStringLiteral("setting")), tr("Edit"), this, [this]() {
+                CropGifDialog d;
+                d.setMaxSize(scene->frameImageSize());
+                d.setSelRect(scene->selRect());
+                if (d.exec()) {
+                    const auto r = d.rect();
+                    scene->setSelRect(r.x(), r.y(), r.width(), r.height());
+                }
+            });
         menu.addAction(ICONRES(QStringLiteral("undo")), tr("Reset"), this,
                        [this]() {
                            auto rect = scene->sceneRect();

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>368</width>
-    <height>280</height>
+    <height>282</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -51,7 +51,7 @@
        <number>8</number>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="lblLanguage">
         <property name="text">
          <string>Language</string>
         </property>
@@ -61,7 +61,7 @@
        <widget class="QComboBox" name="cbLanguage"/>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="lblTheme">
         <property name="text">
          <string>Theme</string>
         </property>
@@ -71,7 +71,7 @@
        <widget class="QComboBox" name="cbTheme"/>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="label_5">
+       <widget class="QLabel" name="lblWinState">
         <property name="text">
          <string>WinState</string>
         </property>
@@ -113,7 +113,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label_3">
+    <widget class="QLabel" name="lblRestartTip">
      <property name="text">
       <string>Restart2TakeEffect</string>
      </property>

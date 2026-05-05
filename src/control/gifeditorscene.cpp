@@ -128,3 +128,35 @@ QColor GifEditorScene::getMainThemeColor(const QImage &image) {
 
     return dominantColor;
 }
+
+int GifEditorScene::selMovement() const { return _selMovement; }
+
+void GifEditorScene::setSelMovement(int newSelMovement) {
+    Q_ASSERT(newSelMovement > 0);
+    _selMovement = newSelMovement;
+}
+
+void GifEditorScene::keyPressEvent(QKeyEvent *event) {
+    if (isCuttingMode()) {
+        auto sel = this->selRect();
+        switch (event->key()) {
+        case Qt::Key_Up:
+            sel.moveTo(sel.x(), sel.y() - _selMovement);
+            break;
+        case Qt::Key_Down:
+            sel.moveTo(sel.x(), sel.y() + _selMovement);
+            break;
+        case Qt::Key_Left:
+            sel.moveTo(sel.x() - _selMovement, sel.y());
+            break;
+        case Qt::Key_Right:
+            sel.moveTo(sel.x() + _selMovement, sel.y());
+            break;
+        default:
+            QGraphicsScene::keyPressEvent(event);
+            return;
+        }
+        this->setSelRect(sel.x(), sel.y(), sel.width(), sel.height());
+    }
+    QGraphicsScene::keyPressEvent(event);
+}

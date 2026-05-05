@@ -32,7 +32,8 @@ LanguageManager &LanguageManager::instance() {
 }
 
 LanguageManager::LanguageManager() {
-    m_langMap = {{"zh_CN", QStringLiteral("简体中文")},
+    m_langMap = {{"en_US", QStringLiteral("English")},
+                 {"zh_CN", QStringLiteral("简体中文")},
                  {"zh_TW", QStringLiteral("繁體中文")}};
 
     auto langPath =

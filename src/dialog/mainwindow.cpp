@@ -92,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     _editor = new GifEditor(QImage(NAMEICONRES("icon")), this);
     _splitter->addWidget(_editor);
     _gallery = new GifContentGallery(this);
+    _gallery->setContextMenuPolicy(Qt::CustomContextMenu);
     _splitter->addWidget(_gallery);
 
     _model = new GifContentModel(_gallery);
@@ -137,6 +138,7 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
 
     m_iBatch = new QToolButton(m_status);
     m_iBatch->setIcon(ICONRES("batch"));
+    m_iBatch->setToolTip(tr("GlobalKey"));
     m_iBatch->setStyleSheet(disableStyle);
     m_iBatch->setEnabled(false);
     m_status->addPermanentWidget(m_iBatch);
@@ -184,9 +186,8 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
             &QToolButton::setEnabled);
     connect(&undo, &QUndoStack::canRedoChanged, _btnRedoAction,
             &QToolButton::setEnabled);
-    connect(&undo, &QUndoStack::cleanChanged, this, [=](bool clean) {
-        this->setSaved(clean && _curfilename != QStringLiteral(":"));
-    });
+    connect(&undo, &QUndoStack::cleanChanged, this,
+            [=](bool clean) { this->setSaved(clean && !isNewGif()); });
 
     connect(_editor, &GifEditor::selRectChanged, this, [=](const QRectF &rect) {
         auto r = rect.toRect();
@@ -213,57 +214,63 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     });
 
     // note: this signal is customed and the QPoint is global
-    connect(_editor, &GifEditor::customContextMenuRequested, this,
-            [=](const QPoint &gp) {
-                if (_model->frameCount() > 0 && !_player->isPlaying()) {
-                    auto shortcuts = QKeySequences::instance();
+    connect(
+        _editor, &GifEditor::customContextMenuRequested, this,
+        [=](const QPoint &gp) {
+            if (_model->frameCount() <= 0 || _player->isPlaying()) {
+                return;
+            }
+            auto shortcuts = QKeySequences::instance();
+            QMenu menu;
+            menu.addAction(ICONRES(QStringLiteral("reverse")), tr("Reverse"),
+                           shortcuts.keySequence(QKeySequences::Key::REV_ALL),
+                           this, &MainWindow::on_reverse);
+            menu.addAction(ICONRES(QStringLiteral("setdelay")), tr("SetDelay"),
+                           shortcuts.keySequence(QKeySequences::Key::SET_DELAY),
+                           this, &MainWindow::on_setdelay);
+            menu.addAction(ICONRES(QStringLiteral("scale")), tr("ScaleGif"),
+                           shortcuts.keySequence(QKeySequences::Key::SCALE_PIC),
+                           this, &MainWindow::on_scalepic);
+            menu.addAction(ICONRES(QStringLiteral("cutpic")), tr("CutGif"),
+                           shortcuts.keySequence(QKeySequences::Key::CUT_PIC),
+                           this, &MainWindow::on_crop);
+            menu.addSeparator();
+            menu.addAction(
+                ICONRES(QStringLiteral("rml")), tr("DeleteBefore"),
+                shortcuts.keySequence(QKeySequences::Key::DEL_BEFORE), this,
+                &MainWindow::on_delbefore);
+            menu.addAction(ICONRES(QStringLiteral("rmr")), tr("DeleteAfter"),
+                           shortcuts.keySequence(QKeySequences::Key::DEL_AFTER),
+                           this, &MainWindow::on_delafter);
+            menu.addSeparator();
+            menu.addAction(ICONRES(QStringLiteral("fliph")), tr("FilpH"), this,
+                           &MainWindow::on_fliph);
+            menu.addAction(ICONRES(QStringLiteral("flipv")), tr("FlipV"), this,
+                           &MainWindow::on_flipv);
+            menu.addAction(ICONRES(QStringLiteral("rotatel")), tr("RotateLeft"),
+                           this, &MainWindow::on_clockwise);
+            menu.addAction(ICONRES(QStringLiteral("rotater")), tr("RotateR"),
+                           this, &MainWindow::on_anticlockwise);
+            menu.exec(gp);
+        });
 
-                    QMenu menu;
-                    menu.addAction(ICONRES(QStringLiteral("copy")), tr("Copy"),
-                                   QKeySequence::Copy, this,
-                                   &MainWindow::on_copy);
-                    menu.addAction(ICONRES(QStringLiteral("paste")),
-                                   tr("Paste"), QKeySequence::Paste, this,
-                                   &MainWindow::on_paste);
-                    menu.addSeparator();
-                    menu.addAction(
-                        ICONRES(QStringLiteral("rml")), tr("DeleteBefore"),
-                        shortcuts.keySequence(QKeySequences::Key::DEL_BEFORE),
-                        this, &MainWindow::on_delbefore);
-                    menu.addAction(
-                        ICONRES(QStringLiteral("rmr")), tr("DeleteAfter"),
-                        shortcuts.keySequence(QKeySequences::Key::DEL_AFTER),
-                        this, &MainWindow::on_delafter);
-                    menu.addAction(
-                        ICONRES(QStringLiteral("reverse")), tr("Reverse"),
-                        shortcuts.keySequence(QKeySequences::Key::REV_ALL),
-                        this, &MainWindow::on_reverse);
-                    menu.addAction(
-                        ICONRES(QStringLiteral("setdelay")), tr("SetDelay"),
-                        shortcuts.keySequence(QKeySequences::Key::SET_DELAY),
-                        this, &MainWindow::on_setdelay);
-                    menu.addAction(
-                        ICONRES(QStringLiteral("scale")), tr("ScaleGif"),
-                        shortcuts.keySequence(QKeySequences::Key::SCALE_PIC),
-                        this, &MainWindow::on_scalepic);
-                    menu.addAction(
-                        ICONRES(QStringLiteral("cutpic")), tr("CutGif"),
-                        shortcuts.keySequence(QKeySequences::Key::CUT_PIC),
-                        this, &MainWindow::on_crop);
-                    menu.addSeparator();
-                    menu.addAction(ICONRES(QStringLiteral("fliph")),
-                                   tr("FilpH"), this, &MainWindow::on_fliph);
-                    menu.addAction(ICONRES(QStringLiteral("flipv")),
-                                   tr("FlipV"), this, &MainWindow::on_flipv);
-                    menu.addAction(ICONRES(QStringLiteral("rotatel")),
-                                   tr("RotateLeft"), this,
-                                   &MainWindow::on_clockwise);
-                    menu.addAction(ICONRES(QStringLiteral("rotater")),
-                                   tr("RotateR"), this,
-                                   &MainWindow::on_anticlockwise);
-                    menu.exec(gp);
-                }
-            });
+    connect(
+        _gallery, &GifContentGallery::customContextMenuRequested, this,
+        [=](const QPoint &pos) {
+            if (_model->frameCount() <= 0 || _player->isPlaying()) {
+                return;
+            }
+            auto shortcuts = QKeySequences::instance();
+            QMenu menu;
+            menu.addAction(ICONRES(QStringLiteral("copy")), tr("Copy"),
+                           QKeySequence::Copy, this, &MainWindow::on_copy);
+            menu.addAction(ICONRES(QStringLiteral("paste")), tr("Paste"),
+                           QKeySequence::Paste, this, &MainWindow::on_paste);
+            menu.addAction(ICONRES(QStringLiteral("export")), tr("Export"),
+                           shortcuts.keySequence(QKeySequences::Key::EXPORT),
+                           this, &MainWindow::on_export);
+            menu.exec(_gallery->mapToGlobal(pos));
+        });
 
     setEditModeEnabled(false);
 
@@ -316,6 +323,8 @@ void MainWindow::buildUpRibbonBar() {
                     if (!ok) {
                         return;
                     }
+                } else {
+                    f = files.first();
                 }
 
                 openGif(f);
@@ -334,7 +343,7 @@ void MainWindow::on_new() {
         if (d.exec()) {
             WaitingLoop dw(tr("NewFromPicsGif"));
             if (loadfromImages(d.getFilenames(), getNewFrameInterval())) {
-                _curfilename = QStringLiteral(":");
+                setAsNewGif();
                 setSaved(false);
                 _gallery->setCurrentIndex(_model->index(0));
                 setEditModeEnabled(true);
@@ -362,7 +371,7 @@ void MainWindow::on_open() {
 
 void MainWindow::on_save() {
     _player->stop();
-    if (_curfilename == QStringLiteral(":")) {
+    if (isNewGif()) {
         on_saveas();
         return;
     }
@@ -1333,11 +1342,10 @@ void MainWindow::setSaved(bool b) {
 
 bool MainWindow::ensureSafeClose() {
     if (!undo.isClean()) {
-        if (WingMessageBox::question(this, tr("ConfirmClose"),
-                                     tr("ConfirmSave") + "\n" +
-                                         (_curfilename == QStringLiteral(":")
-                                              ? tr("Untitled")
-                                              : _curfilename)) ==
+        if (WingMessageBox::question(
+                this, tr("ConfirmClose"),
+                tr("ConfirmSave") + "\n" +
+                    (isNewGif() ? tr("Untitled") : _curfilename)) ==
             QMessageBox::No)
             return false;
     }
@@ -1347,8 +1355,9 @@ bool MainWindow::ensureSafeClose() {
 bool MainWindow::checkIsGif(QString filename) {
     QFile f(filename);
     if (f.open(QFile::ReadOnly)) {
-        char *bu = new char[GIF_STAMP_LEN];
+        char bu[GIF_STAMP_LEN] = {0};
         f.read(bu, GIF_STAMP_LEN);
+        f.close();
         return !memcmp(GIF_STAMP, bu, GIF_STAMP_LEN) ||
                !memcmp(GIF87_STAMP, bu, GIF_STAMP_LEN) ||
                !memcmp(GIF89_STAMP, bu, GIF_STAMP_LEN);
@@ -1444,10 +1453,37 @@ int MainWindow::getNewFrameInterval() {
     }
 }
 
+void MainWindow::setAsNewGif() { _curfilename = QStringLiteral(":"); }
+
+bool MainWindow::isNewGif() const {
+    return _curfilename == QStringLiteral(":");
+}
+
+bool MainWindow::checkGlobalModifiers(const Qt::KeyboardModifiers &mods) {
+    if (mods == Qt::ControlModifier) {
+        return true;
+    } else {
+        if (mods.testFlag(Qt::ControlModifier) &&
+            mods.testFlag(Qt::AltModifier)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void MainWindow::closeEvent(QCloseEvent *event) {
     _player->stop();
+    if (_editor->isCuttingMode()) {
+        auto ret =
+            WingMessageBox::question(this, qAppName(), tr("StillCuttingExit"));
+        if (ret == QMessageBox::No) {
+            event->ignore();
+            return;
+        }
+    }
     if (ensureSafeClose()) {
         _model->clearData();
+        _curfilename.clear();
         auto &set = SettingManager::instance();
         set.setRecentFiles(m_recentmanager->saveRecent());
         set.setEditorLayout(_splitter->saveState());
@@ -1459,8 +1495,24 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     if (_model->frameCount() > 0) {
-        m_iBatch->setEnabled(event->modifiers() == Qt::ControlModifier);
+        m_iBatch->setEnabled(checkGlobalModifiers(event->modifiers()));
         updateGlobalMark();
+
+        if (isGLobalOp()) {
+            // check other shortcut
+            auto mods = event->modifiers();
+            if (mods.testFlag(Qt::AltModifier)) {
+                mods.setFlag(Qt::AltModifier, false);
+                for (auto &t : _gTools) {
+                    auto s = _scs.value(t);
+                    if (s) {
+                        if (s->key() == QKeySequence(mods | event->key())) {
+                            emit s->activated();
+                        }
+                    }
+                }
+            }
+        }
     }
     FramelessMainWindow::keyPressEvent(event);
 }
@@ -1474,14 +1526,27 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void MainWindow::focusInEvent(QFocusEvent *event) {
-    m_iBatch->setEnabled(QGuiApplication::keyboardModifiers() ==
-                         Qt::ControlModifier);
+    m_iBatch->setEnabled(
+        checkGlobalModifiers(QGuiApplication::keyboardModifiers()));
     updateGlobalMark();
     FramelessMainWindow::focusInEvent(event);
 }
 
 void MainWindow::enterEvent(QEnterEvent *event) {
-    m_iBatch->setEnabled(event->modifiers() == Qt::ControlModifier);
+    m_iBatch->setEnabled(checkGlobalModifiers(event->modifiers()));
     updateGlobalMark();
     FramelessMainWindow::enterEvent(event);
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (event->type() == QEvent::EnabledChange) {
+        auto w = qobject_cast<QWidget *>(watched);
+        if (w) {
+            auto v = _scs.value(w, nullptr);
+            if (v) {
+                v->setEnabled(w->isEnabled());
+            }
+        }
+    }
+    return FramelessMainWindow::eventFilter(watched, event);
 }

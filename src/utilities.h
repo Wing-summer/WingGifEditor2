@@ -18,10 +18,12 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+#include <QAbstractButton>
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QIcon>
+#include <QLabel>
 #include <QScreen>
 #include <QWidget>
 
@@ -75,6 +77,19 @@ public:
 
     inline static QString getAbsoluteDirPath(const QString &fileName) {
         return QFileInfo(fileName).absoluteDir().absolutePath();
+    }
+
+    template <typename T>
+    static inline void addSpecialMark(T *w) {
+        if (w) {
+            if constexpr (std::is_same_v<T, QLabel> ||
+                          std::is_base_of_v<QLabel, T> ||
+                          std::is_same_v<T, QAbstractButton> ||
+                          std::is_base_of_v<QAbstractButton, T>) {
+                w->setText(w->text() + QStringLiteral(" (*)"));
+                w->setToolTip(QApplication::tr("OptionNeedRestart"));
+            }
+        }
     }
 };
 
