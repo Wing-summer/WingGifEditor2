@@ -20,6 +20,7 @@
 
 #include <QDialog>
 #include <QFont>
+#include <QGraphicsOpacityEffect>
 #include <QIcon>
 #include <QSize>
 #include <QString>
@@ -31,12 +32,10 @@ class Toast : public QDialog {
     Q_PROPERTY(QColor textcolor READ textColor WRITE setTextColor)
 
 public:
-    static int LENGTH_LONG;
-    static int LENGTH_SHORT;
     enum TOAST_POS { TOP, CENTER, BOTTOM };
 
     static void toast(QWidget *parent, const QPixmap &icon,
-                      const QString &strContent, int nToastInterval = 2000);
+                      const QString &strContent);
 
     virtual ~Toast();
 
@@ -56,13 +55,18 @@ protected:
     QFont displayFont() const;
     QSize calculateTextSize();
     void init();
-    void paintEvent(QPaintEvent *event);
-    void showEvent(QShowEvent *event);
-    void timerEvent(QTimerEvent *event);
+
+    virtual void paintEvent(QPaintEvent *event) override;
+    virtual void showEvent(QShowEvent *event) override;
+    virtual void timerEvent(QTimerEvent *event) override;
+    virtual void enterEvent(QEnterEvent *event) override;
+    virtual void leaveEvent(QEvent *event) override;
+
+public:
+    virtual bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     QString m_strContent;
-    int m_nToastInterval;
     int m_nCurrentWindowOpacity;
     int m_nCurrentStayTime;
     int m_nStatus;
@@ -72,11 +76,12 @@ private:
     QPixmap m_icon;
 
     QWidget *_parent = nullptr;
+    QGraphicsOpacityEffect *_oe = nullptr;
 
     TOAST_POS m_pos = TOAST_POS::BOTTOM;
+    bool _pauseTimer = false;
 
-    Toast(const QString &strContent, const QPixmap &icon, int nToastInterval,
-          QWidget *parent);
+    Toast(const QString &strContent, const QPixmap &icon, QWidget *parent);
 };
 
 #endif // TOAST_H

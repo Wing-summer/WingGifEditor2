@@ -11,7 +11,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent LinguistTools)
 
@@ -28,6 +27,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/QT_VERSION" ${QT_VERSION_MAJOR})
 
 option(WINGGIF_USE_FRAMELESS "Use borderless windows to ensure UI uniformity"
        TRUE)
+option(WINGGIF_OPTIMIZE_FOR_NATIVE
+       "Build with native optimization(less portable)" OFF)
 
 add_subdirectory(3rdparty/giflib)
 
@@ -53,6 +54,19 @@ if(WINGGIF_USE_FRAMELESS)
         src/class/framelesshelper.cpp)
 else()
     set(WIDGET_FRAME_SRC)
+endif()
+
+if(WINGGIF_OPTIMIZE_FOR_NATIVE)
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+    if(COMPILER_SUPPORTS_MARCH_NATIVE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    else()
+        check_cxx_compiler_flag("-mcpu=native" COMPILER_SUPPORTS_MCPU)
+        if(COMPILER_SUPPORTS_MCPU)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=native")
+        endif()
+    endif()
 endif()
 
 set(RIBBON_SRC
